@@ -1,0 +1,2092 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>어떤 공간을 꿈꾸고 계신가요?</title>
+
+  <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+
+  <style>
+    :root {
+      --bg: #eceef1;
+      --card: rgba(255, 255, 255, 0.78);
+      --text: #1d1d1f;
+      --sub: #73757a;
+      --line: rgba(29, 29, 31, 0.10);
+      --main: #1d1d1f;
+      --main-dark: #000000;
+      --soft: rgba(118, 118, 128, 0.10);
+      --danger: #b42318;
+      --radius: 28px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 12% 4%, rgba(255, 255, 255, 0.96), transparent 31rem),
+        radial-gradient(circle at 92% 90%, rgba(255, 255, 255, 0.68), transparent 34rem),
+        linear-gradient(145deg, #e8eaed 0%, #f4f5f6 48%, #e6e8eb 100%);
+      background-attachment: fixed;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .wrap {
+      width: min(1240px, calc(100% - 56px));
+      margin: 34px auto;
+      padding: 22px;
+      display: grid;
+      grid-template-columns: minmax(280px, 350px) minmax(0, 720px);
+      grid-template-areas:
+        "intro progress"
+        "intro form"
+        "intro success";
+      justify-content: space-between;
+      align-items: start;
+      column-gap: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.88);
+      border-radius: 36px;
+      background: rgba(255, 255, 255, 0.42);
+      box-shadow:
+        0 32px 80px rgba(15, 23, 42, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(30px) saturate(125%);
+      -webkit-backdrop-filter: blur(30px) saturate(125%);
+    }
+
+    .intro {
+      grid-area: intro;
+      position: sticky;
+      top: 56px;
+      min-height: calc(100vh - 112px);
+      padding: 30px 28px;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(255, 255, 255, 0.70);
+      border-radius: 27px;
+      background: rgba(245, 246, 248, 0.66);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.90);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      margin-bottom: 86px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 750;
+      letter-spacing: .08em;
+    }
+
+    .brand-mark {
+      width: 13px;
+      height: 13px;
+      border-radius: 4px;
+      background: #1d1d1f;
+      box-shadow: 7px 7px 0 rgba(29, 29, 31, .12);
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      color: #7a7c81;
+      font-weight: 750;
+      letter-spacing: .1em;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(36px, 3.1vw, 50px);
+      line-height: 1.12;
+      letter-spacing: -0.065em;
+      color: var(--text);
+      word-break: keep-all;
+      overflow-wrap: normal;
+    }
+
+    .desc {
+      margin-top: 24px;
+      color: var(--sub);
+      font-size: 14px;
+      line-height: 1.8;
+      letter-spacing: -0.02em;
+      word-break: keep-all;
+      overflow-wrap: normal;
+    }
+
+    .desc-line {
+      display: block;
+    }
+
+    .progress-box {
+      grid-area: progress;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(244, 245, 247, 0.76);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 16px 18px 18px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 20px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--sub);
+      margin-bottom: 8px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 3px;
+      background: rgba(118, 118, 128, 0.16);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, #1d1d1f, #686a70);
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+
+    .card {
+      display: none;
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.82);
+      border-radius: var(--radius);
+      padding: 42px 44px;
+      box-shadow:
+        0 20px 48px rgba(15, 23, 42, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(24px) saturate(120%);
+      -webkit-backdrop-filter: blur(24px) saturate(120%);
+    }
+
+    .card.active {
+      display: block;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .section-title {
+      margin: 0 0 6px;
+      font-size: 27px;
+      letter-spacing: -0.05em;
+    }
+
+    .section-guide {
+      margin: 0 0 36px;
+      color: var(--sub);
+      font-size: 14px;
+      letter-spacing: -0.03em;
+    }
+
+    .field {
+      margin-bottom: 30px;
+    }
+
+    .privacy-consent {
+      margin-top: 38px;
+      padding: 20px;
+      border: 1px solid rgba(29, 29, 31, 0.09);
+      border-radius: 18px;
+      background: rgba(246, 247, 249, 0.72);
+    }
+
+    .consent-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .consent-check input {
+      width: 20px;
+      height: 20px;
+      margin: 1px 0 0;
+      accent-color: #1d1d1f;
+      flex: 0 0 auto;
+    }
+
+    .consent-check span,
+    .consent-check small {
+      display: block;
+    }
+
+    .consent-check strong {
+      color: #1d1d1f;
+      font-size: 15px;
+    }
+
+    .consent-check small {
+      margin-top: 7px;
+      color: #6e6e73;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .label-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 9px;
+    }
+
+    label {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+
+    input[type="text"],
+    input[type="tel"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid rgba(29, 29, 31, 0.11);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 15px 16px;
+      font-size: 16px;
+      outline: none;
+      transition: border 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      font-family: inherit;
+      appearance: none;
+    }
+
+    input[readonly] {
+      background: rgba(242, 243, 245, 0.78);
+      cursor: pointer;
+    }
+
+    select {
+      background-image: linear-gradient(45deg, transparent 50%, var(--main) 50%), linear-gradient(135deg, var(--main) 50%, transparent 50%);
+      background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%;
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+      padding-right: 38px;
+    }
+
+    textarea {
+      min-height: 104px;
+      resize: vertical;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(29, 29, 31, 0.36);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 0 0 4px rgba(29, 29, 31, 0.08);
+    }
+
+    .hint {
+      margin-top: 7px;
+      font-size: 13px;
+      color: var(--sub);
+      letter-spacing: -0.03em;
+    }
+
+    .input-with-suffix {
+      position: relative;
+    }
+
+    .input-with-suffix input {
+      padding-right: 64px;
+    }
+
+    .input-with-suffix .suffix {
+      position: absolute;
+      top: 50%;
+      right: 16px;
+      transform: translateY(-50%);
+      color: var(--sub);
+      font-size: 15px;
+      font-weight: 700;
+      pointer-events: none;
+    }
+
+    .address-row {
+      display: grid;
+      grid-template-columns: 1fr 110px;
+      gap: 8px;
+    }
+
+    .btn-address {
+      min-height: 52px;
+      border-radius: 14px;
+      background: #1d1d1f;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .options.count-1 {
+      grid-template-columns: 1fr;
+    }
+
+    .options.count-2,
+    .options.count-4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .conditional-empty {
+      padding: 19px 20px;
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      color: var(--sub);
+      font-size: 14px;
+      line-height: 1.55;
+      background: rgba(247, 248, 249, 0.66);
+    }
+
+    .keep-group + .keep-group {
+      margin-top: 22px;
+    }
+
+    .keep-group-title {
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 750;
+      color: var(--sub);
+      letter-spacing: -0.02em;
+    }
+
+    .space-detail-group {
+      margin-top: 20px;
+    }
+
+    .space-detail-group > strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 750;
+      color: var(--sub);
+      letter-spacing: -0.02em;
+    }
+
+    .chip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 11px 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.64);
+      color: var(--text);
+      font-size: 14px;
+      letter-spacing: -0.03em;
+      cursor: pointer;
+      user-select: none;
+      box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.05),
+        0 5px 14px rgba(15, 23, 42, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.76);
+      transition:
+        transform .15s ease,
+        border-color .15s ease,
+        background .15s ease,
+        color .15s ease,
+        box-shadow .15s ease;
+    }
+
+    .chip:hover {
+      border-color: rgba(29, 29, 31, 0.22);
+      background: rgba(255, 255, 255, 0.94);
+      transform: translateY(-1px);
+      box-shadow:
+        0 2px 4px rgba(15, 23, 42, 0.06),
+        0 8px 20px rgba(15, 23, 42, 0.09),
+        inset 0 1px 0 rgba(255, 255, 255, 0.88);
+    }
+
+    .chip:active {
+      transform: translateY(0);
+      box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.06),
+        0 3px 8px rgba(15, 23, 42, 0.06),
+        inset 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+
+    .chip input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .chip.is-checked {
+      background: rgba(92, 92, 96, 0.70);
+      border-color: rgba(92, 92, 96, 0.70);
+      color: #fff;
+      font-weight: 700;
+      box-shadow:
+        0 2px 4px rgba(15, 23, 42, 0.08),
+        0 7px 18px rgba(15, 23, 42, 0.13),
+        inset 0 1px 0 rgba(255, 255, 255, 0.20);
+    }
+
+    .file-box {
+      border: 1px dashed rgba(29, 29, 31, 0.20);
+      background: rgba(247, 248, 249, 0.72);
+      border-radius: 18px;
+      padding: 20px;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      font-size: 14px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      min-height: 54px;
+      padding: 0 18px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow:
+        0 2px 4px rgba(15, 23, 42, 0.07),
+        0 8px 20px rgba(15, 23, 42, 0.09),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+      transition:
+        transform .15s ease,
+        box-shadow .15s ease,
+        opacity .15s ease,
+        filter .15s ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow:
+        0 3px 6px rgba(15, 23, 42, 0.08),
+        0 11px 26px rgba(15, 23, 42, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.08),
+        0 4px 10px rgba(15, 23, 42, 0.08),
+        inset 0 1px 3px rgba(15, 23, 42, 0.16);
+    }
+
+    .btn-prev {
+      flex: 0 0 34%;
+      background: var(--soft);
+      color: #3a3a3c;
+    }
+
+    .btn-next,
+    .btn-submit {
+      flex: 1;
+      background: #171717;
+      color: #fff;
+    }
+
+    .btn-submit {
+      background: #1d1d1f;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .error {
+      display: none;
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #fff1f1;
+      color: var(--danger);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .success {
+      grid-area: success;
+      display: none;
+      background: rgba(255, 255, 255, 0.80);
+      border: 1px solid rgba(255, 255, 255, 0.86);
+      border-radius: var(--radius);
+      padding: 34px 22px;
+      text-align: center;
+      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.09);
+    }
+
+    .success h2 {
+      margin: 0 0 10px;
+      font-size: 24px;
+      letter-spacing: -0.05em;
+    }
+
+    .success p {
+      margin: 0;
+      color: var(--sub);
+      font-size: 15px;
+      letter-spacing: -0.03em;
+    }
+
+    .loading {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(232, 234, 237, 0.72);
+      backdrop-filter: blur(18px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .loading-inner {
+      background: #fff;
+      border-radius: 20px;
+      padding: 22px;
+      text-align: center;
+      box-shadow: 0 18px 52px rgba(15, 23, 42, 0.14);
+      color: #1d1d1f;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    #consultForm {
+      grid-area: form;
+      min-width: 0;
+    }
+
+    .small-note {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--sub);
+      letter-spacing: -0.03em;
+    }
+
+    .editor-toolbar {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px;
+      border: 1px solid rgba(255, 255, 255, .82);
+      border-radius: 17px;
+      background: rgba(247, 248, 250, .74);
+      box-shadow: 0 14px 38px rgba(15, 23, 42, .12);
+      backdrop-filter: blur(24px);
+    }
+
+    .editor-toolbar button {
+      min-height: 36px;
+      padding: 0 13px;
+      border-radius: 9px;
+      font-size: 12px;
+      letter-spacing: -.02em;
+      white-space: nowrap;
+    }
+
+    .editor-toggle {
+      background: #171717;
+      color: #fff;
+    }
+
+    .editor-save,
+    .editor-download {
+      display: none;
+      background: #f0efec;
+      color: #262421;
+    }
+
+    .editor-download {
+      background: #1d1d1f;
+      color: #fff;
+    }
+
+    .editor-status {
+      display: none;
+      padding: 0 5px;
+      color: var(--sub);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    body.edit-mode .editor-save,
+    body.edit-mode .editor-download,
+    body.edit-mode .editor-status {
+      display: block;
+    }
+
+    body.edit-mode [data-live-edit="true"] {
+      cursor: text;
+      border-radius: 5px;
+      outline: 1px dashed rgba(29, 29, 31, .45);
+      outline-offset: 3px;
+    }
+
+    body.edit-mode [data-live-edit="true"]:hover,
+    body.edit-mode [data-live-edit="true"]:focus {
+      background: rgba(29, 29, 31, .06);
+      outline: 2px solid rgba(29, 29, 31, .62);
+    }
+
+    body.edit-mode input:not([type="radio"]):not([type="checkbox"]):not([type="file"]),
+    body.edit-mode textarea {
+      cursor: text;
+      outline: 1px dashed rgba(29, 29, 31, .45);
+      outline-offset: 2px;
+    }
+
+    .edit-help {
+      display: none;
+      position: fixed;
+      right: 18px;
+      top: 78px;
+      z-index: 89;
+      width: 278px;
+      padding: 13px 15px;
+      border: 1px solid rgba(23, 23, 23, .09);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, .94);
+      box-shadow: 0 10px 30px rgba(24, 21, 18, .09);
+      color: #5f5b56;
+      font-size: 12px;
+      line-height: 1.65;
+      backdrop-filter: blur(16px);
+    }
+
+    body.edit-mode .edit-help {
+      display: block;
+    }
+
+    @media (max-width: 860px) {
+      .wrap {
+        width: min(100% - 24px, 720px);
+        margin: 12px auto;
+        padding: 12px;
+        display: block;
+        border-radius: 28px;
+      }
+
+      .intro {
+        position: static;
+        min-height: 0;
+        padding: 24px 20px 30px;
+        border-radius: 22px;
+      }
+
+      .brand {
+        margin-bottom: 54px;
+      }
+
+      h1 {
+        font-size: clamp(34px, 10vw, 44px);
+      }
+
+      .progress-box {
+        top: 0;
+        padding: 14px 2px 16px;
+      }
+
+      .card {
+        padding: 30px 22px;
+        border-radius: 20px;
+      }
+
+      .chip {
+        font-size: 13.5px;
+        min-height: 40px;
+        padding: 9px 12px;
+      }
+
+      .address-row {
+        grid-template-columns: 1fr;
+      }
+
+      .btn-address {
+        width: 100%;
+      }
+
+      .nav {
+        position: sticky;
+        bottom: 0;
+        z-index: 8;
+        background: rgba(242, 243, 245, 0.82);
+        backdrop-filter: blur(20px);
+        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.76);
+        border-radius: 18px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+      }
+
+      .editor-toolbar {
+        top: auto;
+        right: 10px;
+        bottom: 10px;
+        left: 10px;
+        justify-content: center;
+      }
+
+      .edit-help {
+        top: auto;
+        right: 10px;
+        bottom: 67px;
+        left: 10px;
+        width: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .brand { margin-bottom: 42px; }
+      .card { padding: 27px 18px; }
+      .section-title { font-size: 24px; }
+      .options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .options.count-1 { grid-template-columns: 1fr; }
+      .chip { width: 100%; font-size: 13.5px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="editor-toolbar" data-editor-ui>
+    <button type="button" class="editor-toggle" id="editorToggle">편집 모드</button>
+    <span class="editor-status">글자를 클릭해 수정하세요</span>
+    <button type="button" class="editor-save" id="editorSave">저장</button>
+    <button type="button" class="editor-download" id="editorDownload">HTML 다운로드</button>
+  </div>
+  <div class="edit-help" data-editor-ui>
+    제목·설명·문항명·선택지를 클릭하면 바로 수정됩니다.<br>
+    입력칸은 편집 모드에서도 직접 테스트할 수 있습니다.
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="loading-inner">
+      접수 중입니다.
+      <div class="small-note">사진 용량이 크면 시간이 조금 걸릴 수 있습니다.</div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="intro">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>YOUR INTERIOR</span>
+      </div>
+      <div class="eyebrow">INTERIOR CONSULTING CHECKLIST</div>
+      <h1>어떤 공간을<br>꿈꾸고 계세요?</h1>
+      <p class="desc">
+        <span class="desc-line">더 나은 상담을 위해 고객님의 취향과 생각을</span>
+        <span class="desc-line">미리 들려주세요.</span>
+        <span class="desc-line">작성에는 약 5~10분 정도 소요되며,</span>
+        <span class="desc-line">정확한 공사 범위와 견적은</span>
+        <span class="desc-line">현장 확인 후 상담을 통해 안내드립니다.</span>
+      </p>
+    </div>
+
+    <div class="progress-box" id="progressBox">
+      <div class="progress-info">
+        <span id="stepText">1 / 8</span>
+        <span id="stepTitle">기본 정보</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </div>
+
+    <form id="consultForm" novalidate>
+
+      <section class="card active" data-title="기본 정보">
+        <h2 class="section-title">1. 기본 정보</h2>
+        <p class="section-guide">현장 확인과 상담 안내를 위한 기본 정보입니다.</p>
+
+        <div class="field">
+          <div class="label-row">
+            <label>현장 주소</label>
+          </div>
+          <div class="address-row">
+            <input type="text" name="address" id="addressInput" placeholder="주소 검색 버튼을 눌러주세요." readonly>
+            <button type="button" class="btn-address" onclick="openAddressSearch()">주소 검색</button>
+          </div>
+          <div class="hint">도로명주소 검색 후 상세주소를 입력해주세요.</div>
+        </div>
+
+        <div class="field">
+          <label>상세주소</label>
+          <input type="text" name="addressDetail" id="addressDetailInput" placeholder="동/호수, 건물명 등 상세주소">
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>공간 형태</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="housingType" value="아파트">아파트</label>
+            <label class="chip"><input type="radio" name="housingType" value="빌라">빌라</label>
+            <label class="chip"><input type="radio" name="housingType" value="단독주택">단독주택</label>
+            <label class="chip"><input type="radio" name="housingType" value="오피스텔">오피스텔</label>
+            <label class="chip"><input type="radio" name="housingType" value="상가">상가</label>
+            <label class="chip"><input type="radio" name="housingType" value="기타">기타</label>
+          </div>
+        </div>
+
+        <div class="field" id="otherHousingTypeField" hidden>
+          <label>기타 공간 형태</label>
+          <input type="text" name="housingTypeOther" placeholder="공간 형태를 입력해주세요.">
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>평수</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="areaSize" value="10평 미만~10평대">10평 미만~10평대</label>
+            <label class="chip"><input type="radio" name="areaSize" value="20평대">20평대</label>
+            <label class="chip"><input type="radio" name="areaSize" value="30평대">30평대</label>
+            <label class="chip"><input type="radio" name="areaSize" value="40평대">40평대</label>
+            <label class="chip"><input type="radio" name="areaSize" value="50평대">50평대</label>
+            <label class="chip"><input type="radio" name="areaSize" value="60평 이상">60평 이상</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>현재 상태</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="currentStatus" value="현재 공실">현재 공실</label>
+            <label class="chip"><input type="radio" name="currentStatus" value="공실 예정">공실 예정</label>
+            <label class="chip"><input type="radio" name="currentStatus" value="거주 중">거주 중</label>
+            <label class="chip"><input type="radio" name="currentStatus" value="입주 예정">입주 예정</label>
+            <label class="chip"><input type="radio" name="currentStatus" value="신축 입주">신축 입주</label>
+            <label class="chip"><input type="radio" name="currentStatus" value="기타(부동산 계약 전)">기타(부동산 계약 전)</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>거주 형태</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="occupancyType" value="소유">소유</label>
+            <label class="chip"><input type="radio" name="occupancyType" value="전·월세">전·월세</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>인테리어를 고려하게 된 이유</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="renovationReason" value="새로 입주할 공간의 리모델링">새로 입주할 공간의 리모델링</label>
+            <label class="chip"><input type="radio" name="renovationReason" value="현재 거주 중인 공간의 리모델링">현재 거주 중인 공간의 리모델링</label>
+            <label class="chip"><input type="radio" name="renovationReason" value="매매·임대를 위한 리모델링">매매·임대를 위한 리모델링</label>
+            <label class="chip"><input type="radio" name="renovationReason" value="기타">기타</label>
+          </div>
+        </div>
+
+        <div class="field" id="otherRenovationReasonField" hidden>
+          <label>기타 사유</label>
+          <input type="text" name="renovationReasonOther" placeholder="인테리어를 고려하게 된 이유를 입력해주세요.">
+        </div>
+      </section>
+
+      <section class="card" data-title="상담 일정">
+        <h2 class="section-title">2. 상담 일정</h2>
+        <p class="section-guide">대면상담 및 유선안내 가능 일정을 확인하기 위한 항목입니다.</p>
+
+        <div class="field">
+          <div class="label-row">
+            <label>대면상담 희망일</label>
+          </div>
+          <input type="date" name="visitDate" id="visitDate" aria-describedby="visitDateHint">
+          <div class="hint" id="visitDateHint">오늘 이후의 날짜만 선택할 수 있습니다.</div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>대면상담 희망 시간</label>
+          </div>
+          <select name="visitTime">
+            <option value="">시간을 선택해주세요.</option>
+            <option value="09:00">09:00</option>
+            <option value="09:30">09:30</option>
+            <option value="10:00">10:00</option>
+            <option value="10:30">10:30</option>
+            <option value="11:00">11:00</option>
+            <option value="11:30">11:30</option>
+            <option value="12:00">12:00</option>
+            <option value="12:30">12:30</option>
+            <option value="13:00">13:00</option>
+            <option value="13:30">13:30</option>
+            <option value="14:00">14:00</option>
+            <option value="14:30">14:30</option>
+            <option value="15:00">15:00</option>
+            <option value="15:30">15:30</option>
+            <option value="16:00">16:00</option>
+            <option value="16:30">16:30</option>
+            <option value="17:00">17:00</option>
+            <option value="17:30">17:30</option>
+            <option value="18:00">18:00</option>
+            <option value="18:30">18:30</option>
+            <option value="19:00">19:00</option>
+            <option value="19:30">19:30</option>
+            <option value="20:00">20:00</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>유선안내 가능 요일</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="checkbox" name="callDays" value="월요일">월요일</label>
+            <label class="chip"><input type="checkbox" name="callDays" value="화요일">화요일</label>
+            <label class="chip"><input type="checkbox" name="callDays" value="수요일">수요일</label>
+            <label class="chip"><input type="checkbox" name="callDays" value="목요일">목요일</label>
+            <label class="chip"><input type="checkbox" name="callDays" value="금요일">금요일</label>
+            <label class="chip"><input type="checkbox" name="callDays" value="토요일">토요일</label>
+            <label class="chip"><input type="checkbox" name="callDays" value="상관없음">상관없음</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>유선안내 가능 시간</label>
+          </div>
+          <select name="callTime">
+            <option value="">시간을 선택해주세요.</option>
+            <option value="09:00">09:00</option>
+            <option value="09:30">09:30</option>
+            <option value="10:00">10:00</option>
+            <option value="10:30">10:30</option>
+            <option value="11:00">11:00</option>
+            <option value="11:30">11:30</option>
+            <option value="12:00">12:00</option>
+            <option value="12:30">12:30</option>
+            <option value="13:00">13:00</option>
+            <option value="13:30">13:30</option>
+            <option value="14:00">14:00</option>
+            <option value="14:30">14:30</option>
+            <option value="15:00">15:00</option>
+            <option value="15:30">15:30</option>
+            <option value="16:00">16:00</option>
+            <option value="16:30">16:30</option>
+            <option value="17:00">17:00</option>
+            <option value="17:30">17:30</option>
+            <option value="18:00">18:00</option>
+            <option value="18:30">18:30</option>
+            <option value="19:00">19:00</option>
+            <option value="19:30">19:30</option>
+            <option value="20:00">20:00</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="card" data-title="공사 범위 및 우선순위">
+        <h2 class="section-title">3. 공사 범위 및 우선순위</h2>
+        <p class="section-guide">원하는 공사 범위와 가장 중요하게 생각하는 부분을 알려주세요.</p>
+
+        <div class="field">
+          <div class="label-row">
+            <label>공사 범위</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="constructionScope" value="전체공사">전체공사</label>
+            <label class="chip"><input type="radio" name="constructionScope" value="부분공사">부분공사</label>
+            <label class="chip"><input type="radio" name="constructionScope" value="상담 필요">상담 필요</label>
+          </div>
+        </div>
+
+        <div class="field" id="targetSpacesField">
+          <div class="label-row">
+            <label>바꾸고 싶은 공간</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="checkbox" name="targetSpaces" value="전체">전체</label>
+            <label class="chip"><input type="checkbox" name="targetSpaces" value="현관">현관</label>
+            <label class="chip"><input type="checkbox" name="targetSpaces" value="거실">거실</label>
+            <label class="chip"><input type="checkbox" name="targetSpaces" value="주방">주방</label>
+            <label class="chip"><input type="checkbox" name="targetSpaces" value="욕실">욕실</label>
+            <label class="chip"><input type="checkbox" name="targetSpaces" value="방">방</label>
+            <label class="chip"><input type="checkbox" name="targetSpaces" value="베란다">베란다</label>
+            <label class="chip"><input type="checkbox" name="targetSpaces" value="다용도실">다용도실</label>
+            <label class="chip"><input type="checkbox" name="targetSpaces" value="기타">기타</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>현재 공간에서 가장 불편하거나 개선하고 싶은 부분</label>
+          </div>
+          <textarea name="inconvenience" placeholder="예: 수납이 부족해요 / 주방이 좁고 불편해요 / 공간이 전체적으로 어두워 보여요"></textarea>
+        </div>
+
+        <div class="field">
+          <label>하지 않아도 되는 공사</label>
+          <textarea name="skipOk" placeholder="예: 베란다는 꼭 안 해도 됩니다. 창호는 상태를 보고 결정하고 싶어요."></textarea>
+        </div>
+
+        <div class="field" id="spaceDetailField" hidden>
+          <div class="label-row">
+            <label>공간별로 바꾸고 싶은 항목</label>
+          </div>
+          <p class="hint">선택한 공간에서 바꾸고 싶은 항목을 골라주세요.</p>
+          <div id="spaceDetailGroups">
+            <div class="space-detail-group" data-space="현관" hidden>
+              <strong>현관</strong>
+              <div class="options">
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="현관 · 중문">중문</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="현관 · 신발장">신발장</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="현관 · 바닥">바닥</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="현관 · 조명">조명</label>
+              </div>
+            </div>
+            <div class="space-detail-group" data-space="거실" hidden>
+              <strong>거실</strong>
+              <div class="options">
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="거실 · 바닥">바닥</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="거실 · 벽·천장">벽·천장</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="거실 · 조명">조명</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="거실 · 수납">수납</label>
+              </div>
+            </div>
+            <div class="space-detail-group" data-space="주방" hidden>
+              <strong>주방</strong>
+              <div class="options">
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="주방 · 싱크대·가구">싱크대·가구</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="주방 · 상판">상판</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="주방 · 벽타일">벽타일</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="주방 · 수납·동선">수납·동선</label>
+              </div>
+            </div>
+            <div class="space-detail-group" data-space="욕실" hidden>
+              <strong>욕실</strong>
+              <div class="options">
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="욕실 · 타일">타일</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="욕실 · 세면대·양변기">세면대·양변기</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="욕실 · 수전·샤워">수전·샤워</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="욕실 · 욕조·파티션">욕조·파티션</label>
+              </div>
+            </div>
+            <div class="space-detail-group" data-space="방" hidden>
+              <strong>방</strong>
+              <div class="options">
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="방 · 바닥">바닥</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="방 · 벽·천장">벽·천장</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="방 · 붙박이장">붙박이장</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="방 · 조명">조명</label>
+              </div>
+            </div>
+            <div class="space-detail-group" data-space="베란다" hidden>
+              <strong>베란다</strong>
+              <div class="options">
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="베란다 · 바닥">바닥</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="베란다 · 탄성코트·도장">탄성코트·도장</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="베란다 · 창호">창호</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="베란다 · 수납">수납</label>
+              </div>
+            </div>
+            <div class="space-detail-group" data-space="다용도실" hidden>
+              <strong>다용도실</strong>
+              <div class="options">
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="다용도실 · 바닥">바닥</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="다용도실 · 수납">수납</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="다용도실 · 세탁기·건조기 공간">세탁기·건조기 공간</label>
+                <label class="chip"><input type="checkbox" name="spaceDetails" value="다용도실 · 배수·설비">배수·설비</label>
+              </div>
+            </div>
+            <div class="space-detail-group" data-space="기타" hidden>
+              <strong>기타 공간</strong>
+              <textarea name="spaceDetailsOther" placeholder="공간과 바꾸고 싶은 항목을 입력해주세요."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>가장 중요하게 생각하는 기준</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="checkbox" name="priority" value="예산">예산</label>
+            <label class="chip"><input type="checkbox" name="priority" value="디자인">디자인</label>
+            <label class="chip"><input type="checkbox" name="priority" value="수납">수납</label>
+            <label class="chip"><input type="checkbox" name="priority" value="동선">동선</label>
+            <label class="chip"><input type="checkbox" name="priority" value="마감">마감</label>
+            <label class="chip"><input type="checkbox" name="priority" value="일정">일정</label>
+            <label class="chip"><input type="checkbox" name="priority" value="내구성">내구성</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>절대 포기하기 어려운 부분</label>
+          <textarea name="nonNegotiable" placeholder="예: 욕실은 꼭 새것처럼 바꾸고 싶어요. 수납은 최대한 확보하고 싶어요."></textarea>
+        </div>
+      </section>
+
+      <section class="card" data-title="예산 및 일정">
+        <h2 class="section-title">4. 예산 및 일정</h2>
+        <p class="section-guide">예산은 정확하지 않아도 됩니다. 상담 기준을 잡기 위한 항목입니다.</p>
+
+        <div class="field">
+          <div class="label-row">
+            <label>생각 중인 예산</label>
+          </div>
+          <div class="input-with-suffix">
+            <input type="text" name="budget" id="budgetInput" inputmode="numeric" autocomplete="off">
+            <span class="suffix" aria-hidden="true">만원</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>예산 기준</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="budgetType" value="최대한 절약">최대한 절약</label>
+            <label class="chip"><input type="radio" name="budgetType" value="퀄리티 우선">퀄리티 우선</label>
+            <label class="chip"><input type="radio" name="budgetType" value="상담 필요">상담 필요</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>입주 예정일</label>
+          </div>
+          <input type="date" name="moveInDate" id="moveInDate" aria-describedby="moveInDateHint">
+          <div class="hint" id="moveInDateHint">오늘 이후의 날짜만 선택할 수 있습니다.</div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>공사 희망 시기</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="preferredStart" value="최대한 빠르게">최대한 빠르게</label>
+            <label class="chip"><input type="radio" name="preferredStart" value="1개월 이내">1개월 이내</label>
+            <label class="chip"><input type="radio" name="preferredStart" value="2~3개월 이내">2~3개월 이내</label>
+            <label class="chip"><input type="radio" name="preferredStart" value="협의 후 진행">협의 후 진행</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>공사 중 거주 여부</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="livingDuringConstruction" value="공실 상태에서 공사">공실 상태에서 공사</label>
+            <label class="chip"><input type="radio" name="livingDuringConstruction" value="거주하면서 공사">거주하면서 공사</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>일정 관련 특이사항</label>
+          <textarea name="scheduleNote" placeholder="예: 이사일이 정해져 있어요. 특정 날짜 전까지 끝나야 해요."></textarea>
+        </div>
+      </section>
+
+      <section class="card" data-title="원하는 분위기">
+        <h2 class="section-title">5. 원하는 분위기</h2>
+        <p class="section-guide">정확한 스타일명을 몰라도 괜찮습니다. 느낌만 체크해주세요.</p>
+
+        <div class="field">
+          <div class="label-row">
+            <label>원하는 스타일</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="checkbox" name="styles" value="화이트">화이트</label>
+            <label class="chip"><input type="checkbox" name="styles" value="우드">우드</label>
+            <label class="chip"><input type="checkbox" name="styles" value="모던">모던</label>
+            <label class="chip"><input type="checkbox" name="styles" value="심플">미니멀</label>
+            <label class="chip"><input type="checkbox" name="styles" value="내추럴">내추럴</label>
+            <label class="chip"><input type="checkbox" name="styles" value="따뜻한 느낌">따뜻한 느낌</label>
+            <label class="chip"><input type="checkbox" name="styles" value="고급스러운 느낌">고급스러운 느낌</label>
+            <label class="chip"><input type="checkbox" name="styles" value="기타">기타</label>
+          </div>
+        </div>
+
+        <div class="field" id="otherStyleField" hidden>
+          <label>원하는 스타일 기타</label>
+          <textarea name="otherStyle" placeholder="원하는 스타일이나 분위기를 자유롭게 적어주세요."></textarea>
+        </div>
+
+        <div class="field">
+          <label>선호 색감</label>
+          <div class="options">
+            <label class="chip"><input type="checkbox" name="colorTone" value="밝은 톤">밝은 톤</label>
+            <label class="chip"><input type="checkbox" name="colorTone" value="어두운 톤">어두운 톤</label>
+            <label class="chip"><input type="checkbox" name="colorTone" value="베이지톤">베이지톤</label>
+            <label class="chip"><input type="checkbox" name="colorTone" value="그레이톤">그레이톤</label>
+            <label class="chip"><input type="checkbox" name="colorTone" value="우드톤">우드톤</label>
+            <label class="chip"><input type="checkbox" name="colorTone" value="컬러 포인트">컬러 포인트</label>
+            <label class="chip"><input type="checkbox" name="colorTone" value="상담 필요">상담 필요</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>피하고 싶은 느낌</label>
+          <textarea name="avoidStyle" placeholder="예: 너무 차가운 느낌은 싫어요. 어두운 집은 피하고 싶어요."></textarea>
+        </div>
+      </section>
+
+      <section class="card" data-title="생활 방식">
+        <h2 class="section-title">6. 생활 방식</h2>
+        <p class="section-guide">생활 패턴에 따라 수납, 주방, 마감 방향이 달라질 수 있습니다.</p>
+
+        <div class="field">
+          <div class="label-row">
+            <label>거주 인원</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="residents" value="1인">1인</label>
+            <label class="chip"><input type="radio" name="residents" value="2인">2인</label>
+            <label class="chip"><input type="radio" name="residents" value="3인">3인</label>
+            <label class="chip"><input type="radio" name="residents" value="4인 이상">4인 이상</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>아이 여부</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="hasChild" value="있음">있음</label>
+            <label class="chip"><input type="radio" name="hasChild" value="없음">없음</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>반려동물 여부</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="hasPet" value="있음">있음</label>
+            <label class="chip"><input type="radio" name="hasPet" value="없음">없음</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>수납 필요도</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="storageNeed" value="적음">적음</label>
+            <label class="chip"><input type="radio" name="storageNeed" value="보통">보통</label>
+            <label class="chip"><input type="radio" name="storageNeed" value="많음">많음</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>요리 빈도</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="cookingFrequency" value="거의 안 함">거의 안 함</label>
+            <label class="chip"><input type="radio" name="cookingFrequency" value="보통">보통</label>
+            <label class="chip"><input type="radio" name="cookingFrequency" value="자주 함">자주 함</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>재택근무·작업공간</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="workSpace" value="필요">필요</label>
+            <label class="chip"><input type="radio" name="workSpace" value="필요 없음">필요 없음</label>
+            <label class="chip"><input type="radio" name="workSpace" value="상담 필요">상담 필요</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>생활 방식 및 취미 관련 특이사항</label>
+          <textarea name="lifestyleNote" placeholder="예: 홈짐이 필요해요 / 악기 연주를 해요 / 캠핑 장비가 많아요 / 큰 작품을 만드는 취미가 있어요"></textarea>
+        </div>
+      </section>
+
+      <section class="card" data-title="사진 및 참고자료">
+        <h2 class="section-title">7. 사진 및 참고자료</h2>
+        <p class="section-guide">현재 집 사진이나 원하는 분위기 자료가 있으면 첨부해주세요.</p>
+
+        <div class="field">
+          <label>현장 사진</label>
+          <div class="file-box">
+            <input type="file" name="sitePhotos" accept="image/*" multiple>
+            <div class="hint">현재 집 사진을 첨부해주세요. 여러 장 선택 가능합니다.</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>참고 이미지</label>
+          <div class="file-box">
+            <input type="file" name="referenceImages" accept="image/*" multiple>
+            <div class="hint">원하는 분위기, 타업체 시공사례, 캡처 이미지 등을 첨부할 수 있습니다.</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>참고 링크</label>
+          <textarea name="referenceLinks" placeholder="인스타그램 / 블로그 / 핀터레스트 / 타업체 시공사례 / 제품 링크 등을 붙여넣어주세요."></textarea>
+        </div>
+
+        <div class="field">
+          <label>참고 자료에서 마음에 드는 부분</label>
+          <textarea name="referenceLike" placeholder="예: 전체 분위기 / 색감 / 주방 디자인 / 욕실 분위기 / 조명 / 수납 방식 / 바닥재 느낌 / 가구 배치"></textarea>
+        </div>
+
+      </section>
+
+      <section class="card" data-title="상담 및 연락 정보">
+        <h2 class="section-title">8. 상담 및 연락 정보</h2>
+        <p class="section-guide">상담 방식과 연락 정보를 마지막으로 확인해주세요.</p>
+
+        <div class="field">
+          <div class="label-row">
+            <label>연령대</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="ageGroup" value="20~30대">20~30대</label>
+            <label class="chip"><input type="radio" name="ageGroup" value="40대">40대</label>
+            <label class="chip"><input type="radio" name="ageGroup" value="50대">50대</label>
+            <label class="chip"><input type="radio" name="ageGroup" value="60대 이상">60대 이상</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>인테리어 상담 경험</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="consultationExperience" value="없음">없음</label>
+            <label class="chip"><input type="radio" name="consultationExperience" value="1~2회">1~2회</label>
+            <label class="chip"><input type="radio" name="consultationExperience" value="3회 이상">3회 이상</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>상담 시 원하는 의견 반영 방식</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="decisionStyle" value="제 의견을 중심으로 진행하고 싶어요">제 의견을 중심으로 진행하고 싶어요</label>
+            <label class="chip"><input type="radio" name="decisionStyle" value="전문가의 추천을 참고해서 결정하고 싶어요">전문가의 추천을 참고해서 결정하고 싶어요</label>
+            <label class="chip"><input type="radio" name="decisionStyle" value="전문가에게 전체적으로 맡기고 싶어요">전문가에게 전체적으로 맡기고 싶어요</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>상담 안내를 받으실 연락 방법</label>
+          </div>
+          <div class="options">
+            <label class="chip"><input type="radio" name="preferredContact" value="전화">전화</label>
+            <label class="chip"><input type="radio" name="preferredContact" value="문자·카카오톡">문자·카카오톡</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>상담 때 꼭 물어보고 싶은 내용</label>
+          <textarea name="questions" placeholder="예: 이 예산으로 어디까지 가능한지 궁금해요. 공사 기간이 얼마나 걸릴지 궁금해요."></textarea>
+        </div>
+
+        <div class="field">
+          <label>기타 요청사항</label>
+          <textarea name="etc" placeholder="추가로 전달하고 싶은 내용을 적어주세요."></textarea>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>성함</label>
+          </div>
+          <input type="text" name="name" placeholder="성함을 입력해주세요.">
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>휴대폰 번호</label>
+          </div>
+          <input type="tel" name="phone" id="phoneInput" inputmode="numeric" placeholder="">
+        </div>
+
+        <div class="field privacy-consent">
+          <label class="consent-check">
+            <input type="checkbox" name="privacyConsent" id="privacyConsent" value="동의">
+            <span>
+              <strong>개인정보 수집 및 이용에 동의합니다.</strong>
+              <small>상담 접수와 연락을 위해 성명, 연락처, 주소 및 상담 내용을 수집하며 상담 완료 후 관련 기준에 따라 보관·파기합니다.</small>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <div class="error" id="errorBox"></div>
+
+      <div class="nav" id="navBox">
+        <button type="button" class="btn-prev" id="prevBtn">이전</button>
+        <button type="button" class="btn-next" id="nextBtn">다음</button>
+        <button type="submit" class="btn-submit" id="submitBtn" style="display:none;">제출하기</button>
+      </div>
+    </form>
+
+    <div class="success" id="successBox">
+      <h2>접수가 완료되었습니다.</h2>
+      <p>작성해주신 내용을 확인 후 상담 시 함께 안내드리겠습니다.</p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('consultForm');
+    const cards = Array.from(document.querySelectorAll('.card'));
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const errorBox = document.getElementById('errorBox');
+    const successBox = document.getElementById('successBox');
+    const progressBar = document.getElementById('progressBar');
+    const stepText = document.getElementById('stepText');
+    const stepTitle = document.getElementById('stepTitle');
+    const loading = document.getElementById('loading');
+    const progressBox = document.getElementById('progressBox');
+    const navBox = document.getElementById('navBox');
+    const editorToggle = document.getElementById('editorToggle');
+    const editorSave = document.getElementById('editorSave');
+    const editorDownload = document.getElementById('editorDownload');
+
+    const phoneInput = document.getElementById('phoneInput');
+    const budgetInput = document.getElementById('budgetInput');
+    const addressInput = document.getElementById('addressInput');
+    const addressDetailInput = document.getElementById('addressDetailInput');
+    const visitDateInput = form.querySelector('input[name="visitDate"]');
+    const moveInDateInput = form.querySelector('input[name="moveInDate"]');
+    const otherStyleInput = form.querySelector('input[name="styles"][value="기타"]');
+    const otherStyleField = document.getElementById('otherStyleField');
+    const otherHousingTypeInput = form.querySelector('input[name="housingType"][value="기타"]');
+    const otherHousingTypeField = document.getElementById('otherHousingTypeField');
+    const otherRenovationReasonInput = form.querySelector('input[name="renovationReason"][value="기타"]');
+    const otherRenovationReasonField = document.getElementById('otherRenovationReasonField');
+    const spaceDetailField = document.getElementById('spaceDetailField');
+    const privacyConsent = document.getElementById('privacyConsent');
+
+    let currentStep = 0;
+    let isEditMode = false;
+    // 문항 구조가 변경된 버전끼리 편집 문구가 잘못 매칭되지 않도록
+    // 구조 버전별로 별도의 저장 공간을 사용합니다.
+    const editorStorageKey = 'interior-checklist-live-copy-v10';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      balanceOptionGrids();
+      prepareLiveEditor();
+      loadEditorCopy();
+      if (window.google?.script?.run) {
+        google.script.run.setupSheet();
+      }
+      bindFormatters();
+      bindChipState();
+      bindTargetSpaceOptions();
+      placeSpaceDetailsAfterTargetSpaces();
+      bindOtherStyleField();
+      bindConditionalTextField('housingType', otherHousingTypeInput, otherHousingTypeField);
+      bindConditionalTextField('renovationReason', otherRenovationReasonInput, otherRenovationReasonField);
+      setDateMinimums();
+      updateStep();
+    });
+
+    function balanceOptionGrids() {
+      document.querySelectorAll('.options').forEach((group) => {
+        const count = group.querySelectorAll(':scope > .chip').length;
+        if ([1, 2, 4].includes(count)) {
+          group.classList.add(`count-${count}`);
+        }
+      });
+    }
+
+    editorToggle.addEventListener('click', () => {
+      setEditMode(!isEditMode);
+    });
+
+    editorSave.addEventListener('click', () => {
+      saveEditorCopy();
+      flashEditorStatus('저장되었습니다');
+    });
+
+    editorDownload.addEventListener('click', () => {
+      saveEditorCopy();
+      downloadEditedHtml();
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!isEditMode) return;
+      if (event.target.closest('[data-live-edit="true"]')) return;
+      if (event.target.closest('.chip')) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }, true);
+
+    prevBtn.addEventListener('click', () => {
+      if (currentStep > 0) {
+        currentStep--;
+        updateStep();
+        scrollToTop();
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (currentStep < cards.length - 1) {
+        currentStep++;
+        updateStep();
+        scrollToTop();
+      }
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (!privacyConsent.checked) {
+        showError('제출하려면 개인정보 수집 및 이용에 동의해주세요.');
+        privacyConsent.focus();
+        return;
+      }
+
+      synchronizeEditableValues();
+
+      const payload = {
+        formData: collectFormData(),
+        files: await collectFiles()
+      };
+
+      if (!window.google?.script?.run) {
+        showError('현재 파일은 미리보기 상태입니다. 실제 제출은 Google Apps Script로 배포한 주소에서 가능합니다.');
+        return;
+      }
+
+      loading.style.display = 'flex';
+      submitBtn.disabled = true;
+
+      google.script.run
+        .withSuccessHandler(() => {
+          loading.style.display = 'none';
+          form.style.display = 'none';
+          progressBox.style.display = 'none';
+          navBox.style.display = 'none';
+          successBox.style.display = 'block';
+          scrollToTop();
+        })
+        .withFailureHandler((err) => {
+          loading.style.display = 'none';
+          submitBtn.disabled = false;
+          showError('제출 중 오류가 발생했습니다. 사진 용량을 줄이거나 다시 시도해주세요.');
+          console.error(err);
+        })
+        .submitChecklist(payload);
+    });
+
+    function bindFormatters() {
+      phoneInput.addEventListener('input', () => {
+        phoneInput.value = formatPhone(phoneInput.value);
+      });
+
+      if (budgetInput) {
+        budgetInput.addEventListener('input', () => {
+          const digitsOnly = budgetInput.value.replace(/\D/g, '');
+          budgetInput.value = digitsOnly
+            ? digitsOnly.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+            : '';
+        });
+
+        budgetInput.addEventListener('keydown', (event) => {
+          const allowedKeys = [
+            'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight',
+            'Home', 'End', 'Tab'
+          ];
+          const isShortcut = (event.ctrlKey || event.metaKey) &&
+            ['a', 'c', 'v', 'x'].includes(event.key.toLowerCase());
+
+          if (!/^\d$/.test(event.key) && !allowedKeys.includes(event.key) && !isShortcut) {
+            event.preventDefault();
+          }
+        });
+      }
+    }
+
+    function setDateMinimums() {
+      const now = new Date();
+      const localToday = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 10);
+
+      [visitDateInput, moveInDateInput].forEach((dateInput) => {
+        if (!dateInput) return;
+        dateInput.min = localToday;
+        if (dateInput.value && dateInput.value < localToday) {
+          dateInput.value = '';
+        }
+
+        dateInput.addEventListener('change', () => {
+          if (dateInput.value && dateInput.value < localToday) {
+            dateInput.value = '';
+            showError('지난 날짜는 선택할 수 없습니다.');
+          } else {
+            hideError();
+          }
+        });
+      });
+    }
+
+    function bindChipState() {
+      const chipInputs = Array.from(document.querySelectorAll('.chip input'));
+
+      chipInputs.forEach((input) => {
+        if (input.dataset.chipBound === 'true') return;
+        input.dataset.chipBound = 'true';
+        input.addEventListener('change', () => {
+          updateChipState(input.name);
+        });
+      });
+
+      const names = [...new Set(chipInputs.map(input => input.name))];
+      names.forEach(updateChipState);
+    }
+
+    function bindTargetSpaceOptions() {
+      document.querySelectorAll('input[name="targetSpaces"]').forEach((input) => {
+        input.addEventListener('change', () => {
+          const targetInputs = Array.from(document.querySelectorAll('input[name="targetSpaces"]'));
+          const allInput = targetInputs.find(item => item.value === '전체');
+
+          if (input.value === '전체' && input.checked) {
+            targetInputs.forEach(item => {
+              if (item !== input) item.checked = false;
+            });
+          } else if (input.checked && allInput) {
+            allInput.checked = false;
+          }
+
+          updateChipState('targetSpaces');
+          updateSpaceDetailGroups();
+        });
+      });
+
+      updateSpaceDetailGroups();
+    }
+
+    function placeSpaceDetailsAfterTargetSpaces() {
+      const targetSpacesField = document.getElementById('targetSpacesField');
+      if (!targetSpacesField || !spaceDetailField) return;
+      targetSpacesField.insertAdjacentElement('afterend', spaceDetailField);
+    }
+
+    function updateSpaceDetailGroups() {
+      const selectedSpaces = Array.from(
+        document.querySelectorAll('input[name="targetSpaces"]:checked')
+      ).map(input => input.value);
+      const showAll = selectedSpaces.includes('전체');
+      const groups = Array.from(document.querySelectorAll('.space-detail-group'));
+      let hasVisibleGroup = false;
+
+      groups.forEach((group) => {
+        const isVisible = showAll || selectedSpaces.includes(group.dataset.space);
+        group.hidden = !isVisible;
+        hasVisibleGroup = hasVisibleGroup || isVisible;
+
+        if (!isVisible) {
+          group.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+            input.checked = false;
+          });
+          group.querySelectorAll('input[type="text"], textarea').forEach((input) => {
+            input.value = '';
+          });
+        }
+      });
+
+      if (spaceDetailField) {
+        spaceDetailField.hidden = !hasVisibleGroup;
+      }
+      updateChipState('spaceDetails');
+    }
+
+    function bindOtherStyleField() {
+      if (!otherStyleInput || !otherStyleField) return;
+
+      const updateOtherStyleVisibility = () => {
+        otherStyleField.hidden = !otherStyleInput.checked;
+      };
+
+      otherStyleInput.addEventListener('change', updateOtherStyleVisibility);
+      updateOtherStyleVisibility();
+    }
+
+    function bindConditionalTextField(groupName, otherInput, field) {
+      if (!otherInput || !field) return;
+
+      const updateVisibility = () => {
+        field.hidden = !otherInput.checked;
+        if (!otherInput.checked) {
+          const textInput = field.querySelector('input, textarea');
+          if (textInput) textInput.value = '';
+        }
+      };
+
+      form.querySelectorAll(`input[name="${groupName}"]`).forEach((input) => {
+        input.addEventListener('change', updateVisibility);
+      });
+      updateVisibility();
+    }
+
+    function updateChipState(name) {
+      const inputs = Array.from(document.querySelectorAll(`input[name="${name}"]`));
+
+      inputs.forEach((input) => {
+        const chip = input.closest('.chip');
+
+        if (chip) {
+          chip.classList.toggle('is-checked', input.checked);
+        }
+      });
+    }
+
+    function formatPhone(value) {
+      const digits = value.replace(/\D/g, '').slice(0, 11);
+
+      if (digits.length <= 3) {
+        return digits;
+      }
+
+      if (digits.length <= 7) {
+        return digits.replace(/(\d{3})(\d+)/, '$1-$2');
+      }
+
+      return digits.replace(/(\d{3})(\d{4})(\d+)/, '$1-$2-$3');
+    }
+
+    function openAddressSearch() {
+      if (!window.daum || !window.daum.Postcode) {
+        showError('주소 검색 기능을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
+
+      new daum.Postcode({
+        oncomplete: function(data) {
+          let address = data.roadAddress || data.jibunAddress || '';
+
+          if (data.buildingName && data.apartment === 'Y') {
+            address += ` (${data.buildingName})`;
+          }
+
+          addressInput.value = address;
+          addressDetailInput.focus();
+          hideError();
+        }
+      }).open();
+    }
+
+    function updateStep() {
+      cards.forEach((card, index) => {
+        card.classList.toggle('active', index === currentStep);
+      });
+
+      const total = cards.length;
+      const percent = ((currentStep + 1) / total) * 100;
+
+      progressBar.style.width = `${percent}%`;
+      stepText.textContent = `${currentStep + 1} / ${total}`;
+      stepTitle.textContent = cards[currentStep].dataset.title || '';
+
+      prevBtn.style.display = currentStep === 0 ? 'none' : 'block';
+      nextBtn.style.display = currentStep === total - 1 ? 'none' : 'block';
+      submitBtn.style.display = currentStep === total - 1 ? 'block' : 'none';
+
+      hideError();
+    }
+
+    function collectFormData() {
+      const data = {};
+      const formData = new FormData(form);
+
+      for (const [key, value] of formData.entries()) {
+        if (value instanceof File) continue;
+
+        if (data[key]) {
+          if (!Array.isArray(data[key])) {
+            data[key] = [data[key]];
+          }
+
+          data[key].push(value);
+        } else {
+          data[key] = value;
+        }
+      }
+
+      const checkboxNames = [
+        'consultPurpose',
+        'callDays',
+        'targetSpaces',
+        'spaceDetails',
+        'replaceItems',
+        'styles',
+        'colorTone',
+        'priority',
+        'mustSpaces'
+      ];
+
+      checkboxNames.forEach((name) => {
+        data[name] = Array.from(form.querySelectorAll(`input[name="${name}"]:checked`)).map(input => input.value);
+      });
+
+      data.phone = formatPhone(data.phone || '');
+
+      return data;
+    }
+
+    async function collectFiles() {
+      const sitePhotos = await readFileInput('sitePhotos');
+      const referenceImages = await readFileInput('referenceImages');
+
+      return {
+        sitePhotos,
+        referenceImages
+      };
+    }
+
+    function readFileInput(name) {
+      const input = form.querySelector(`input[name="${name}"]`);
+      const files = Array.from(input.files || []);
+
+      const maxFiles = 10;
+      const selectedFiles = files.slice(0, maxFiles);
+
+      return Promise.all(selectedFiles.map(file => readFileAsBase64(file)));
+    }
+
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+          const result = reader.result || '';
+          const base64 = String(result).split(',')[1];
+
+          resolve({
+            name: file.name,
+            mimeType: file.type,
+            base64: base64
+          });
+        };
+
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.style.display = 'block';
+      errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function hideError() {
+      errorBox.textContent = '';
+      errorBox.style.display = 'none';
+    }
+
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function prepareLiveEditor() {
+      const directSelectors = [
+        '.brand span:last-child',
+        '.eyebrow',
+        'h1',
+        '.desc',
+        '.meta-label',
+        '.meta-value',
+        '.section-title',
+        '.section-guide',
+        '.field > label',
+        '.label-row > label',
+        '.hint',
+        '.small-note',
+        '.success h2',
+        '.success p'
+      ];
+
+      document.querySelectorAll(directSelectors.join(',')).forEach(markEditable);
+
+      document.querySelectorAll('.chip').forEach((chip) => {
+        const textNodes = Array.from(chip.childNodes).filter(node =>
+          node.nodeType === Node.TEXT_NODE && node.textContent.trim()
+        );
+
+        textNodes.forEach((node) => {
+          const span = document.createElement('span');
+          span.textContent = node.textContent.trim();
+          node.replaceWith(span);
+          markEditable(span);
+        });
+      });
+
+      assignEditorIds();
+    }
+
+    function markEditable(element) {
+      element.dataset.liveEdit = 'true';
+      element.setAttribute('spellcheck', 'false');
+    }
+
+    function assignEditorIds() {
+      document.querySelectorAll('[data-live-edit="true"]').forEach((element, index) => {
+        element.dataset.editId = `text-${index}`;
+      });
+
+      document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach((element, index) => {
+        element.dataset.placeholderId = `placeholder-${index}`;
+      });
+    }
+
+    function setEditMode(enabled) {
+      isEditMode = enabled;
+      document.body.classList.toggle('edit-mode', enabled);
+      editorToggle.textContent = enabled ? '편집 종료' : '편집 모드';
+
+      document.querySelectorAll('[data-live-edit="true"]').forEach((element) => {
+        element.contentEditable = enabled ? 'true' : 'false';
+      });
+
+      if (!enabled) {
+        saveEditorCopy();
+      }
+    }
+
+    function getEditorCopy() {
+      const text = {};
+      const placeholders = {};
+
+      document.querySelectorAll('[data-edit-id]').forEach((element) => {
+        text[element.dataset.editId] = element.innerHTML;
+      });
+
+      document.querySelectorAll('[data-placeholder-id]').forEach((element) => {
+        placeholders[element.dataset.placeholderId] = element.placeholder;
+      });
+
+      return { text, placeholders };
+    }
+
+    function saveEditorCopy() {
+      synchronizeEditableValues();
+      localStorage.setItem(editorStorageKey, JSON.stringify(getEditorCopy()));
+    }
+
+    function synchronizeEditableValues() {
+      document.querySelectorAll('.chip').forEach((chip) => {
+        const input = chip.querySelector('input');
+        const editedText = chip.querySelector('[data-live-edit="true"]');
+        if (!input || !editedText) return;
+        input.value = editedText.textContent.trim();
+      });
+    }
+
+    function loadEditorCopy() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(editorStorageKey) || 'null');
+        if (!saved) return;
+
+        Object.entries(saved.text || {}).forEach(([id, html]) => {
+          const element = document.querySelector(`[data-edit-id="${id}"]`);
+          if (element) element.innerHTML = html;
+        });
+
+        Object.entries(saved.placeholders || {}).forEach(([id, placeholder]) => {
+          const element = document.querySelector(`[data-placeholder-id="${id}"]`);
+          if (element) element.placeholder = placeholder;
+        });
+      } catch (error) {
+        console.warn('저장된 편집 내용을 불러오지 못했습니다.', error);
+      }
+    }
+
+    function flashEditorStatus(message) {
+      const status = document.querySelector('.editor-status');
+      const original = status.textContent;
+      status.textContent = message;
+      window.setTimeout(() => {
+        status.textContent = original;
+      }, 1600);
+    }
+
+    function downloadEditedHtml() {
+      const clone = document.documentElement.cloneNode(true);
+      clone.querySelector('body').classList.remove('edit-mode');
+      clone.querySelectorAll('[contenteditable]').forEach((element) => {
+        element.setAttribute('contenteditable', 'false');
+      });
+
+      const source = '<!DOCTYPE html>\n' + clone.outerHTML;
+      const blob = new Blob([source], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'interior-consultation-edited.html';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      flashEditorStatus('HTML 파일을 만들었습니다');
+    }
+  </script>
+</body>
+</html>
