@@ -15,10 +15,10 @@ const formatDate = (value: string) => new Intl.DateTimeFormat("ko-KR", {
   year: "2-digit", month: "2-digit", day: "2-digit",
 }).format(new Date(value));
 
-export function ConsultationsPage() {
+export function ConsultationsPage({ initialStatus = "전체" }: { initialStatus?: "전체" | ConsultationStatus }) {
   const [consultations, setConsultations] = useState(initialConsultations);
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"전체" | ConsultationStatus>("전체");
+  const [statusFilter, setStatusFilter] = useState<"전체" | ConsultationStatus>(initialStatus);
   const [page, setPage] = useState(1);
 
   useEffect(() => {

@@ -1,20 +1,22 @@
+import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import type { DashboardStat } from "@/types/dashboard";
+import type { LucideIcon } from "lucide-react";
+import type { ConsultationStatus } from "@/types/consultation";
 
-export function StatCard({ label, count, icon: Icon, featured }: DashboardStat) {
+export function StatCard({ label, count, icon: Icon, featured }: { label: ConsultationStatus; count: number | null; icon: LucideIcon; featured?: boolean }) {
   return (
-    <article className={`stat-card${featured ? " stat-card--featured" : ""}`}>
+    <Link className={`stat-card${featured ? " stat-card--featured" : ""}`} href={`/consultations?status=${encodeURIComponent(label)}`}>
       <div className="stat-card-label">
         <Icon aria-hidden="true" />
         <span>{label}</span>
       </div>
       <p>
-        <strong>{count}</strong>
-        <span>건</span>
+        <strong>{count === null ? <span className="stat-skeleton" aria-label="불러오는 중" /> : count}</strong>
+        {count !== null && <span>건</span>}
       </p>
-      <button aria-label={`${label} 내역 보기`} type="button">
+      <span className="stat-card-link-icon" aria-label={`${label} 내역 보기`}>
         <ArrowUpRight />
-      </button>
-    </article>
+      </span>
+    </Link>
   );
 }

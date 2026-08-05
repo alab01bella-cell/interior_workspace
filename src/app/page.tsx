@@ -1,10 +1,7 @@
 import { CloudSun } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
-import { CalendarCard } from "@/components/dashboard/calendar-card";
-import { ScheduleCard } from "@/components/dashboard/schedule-card";
-import { StatCard } from "@/components/dashboard/stat-card";
-import { TodoCard } from "@/components/dashboard/todo-card";
-import { dashboardStats, mockUser } from "@/lib/mock/dashboard-data";
+import { DashboardDataSection } from "@/components/dashboard/dashboard-data-section";
+import { mockUser } from "@/lib/mock/dashboard-data";
 
 function getKoreanDate() {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -35,17 +32,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="stats-grid" aria-label="상담 현황">
-        {dashboardStats.map((stat) => <StatCard {...stat} key={stat.label} />)}
-      </section>
-
-      <section className="dashboard-grid">
-        <div className="dashboard-column">
-          <ScheduleCard />
-          <TodoCard />
-        </div>
-        <CalendarCard />
-      </section>
+      <DashboardDataSection />
     </AppShell>
   );
 }
