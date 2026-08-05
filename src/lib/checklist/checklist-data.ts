@@ -11,6 +11,59 @@ export const checklistSteps: ChecklistStepMeta[] = [
   { title: "상담 및 연락 정보", guide: "상담 방식과 연락 정보를 마지막으로 확인해주세요." },
 ];
 
+export interface ChecklistAnswerField {
+  name: string;
+  label: string;
+  kind?: "files";
+}
+
+export const checklistAnswerSections: { title: string; fields: ChecklistAnswerField[] }[] = [
+  { title: "기본 정보", fields: [
+    { name: "address", label: "현장 주소" }, { name: "addressDetail", label: "상세주소" },
+    { name: "housingType", label: "공간 형태" }, { name: "housingTypeOther", label: "기타 공간 형태" },
+    { name: "areaSize", label: "평수" }, { name: "currentStatus", label: "현재 상태" },
+    { name: "occupancyType", label: "거주 형태" }, { name: "renovationReason", label: "인테리어를 고려하게 된 이유" },
+    { name: "renovationReasonOther", label: "기타 사유" },
+  ] },
+  { title: "상담 일정", fields: [
+    { name: "visitDate", label: "대면상담 희망일" }, { name: "visitTime", label: "대면상담 희망 시간" },
+    { name: "callDays", label: "유선안내 가능 요일" }, { name: "callTime", label: "유선안내 가능 시간" },
+  ] },
+  { title: "공사 범위 및 우선순위", fields: [
+    { name: "constructionScope", label: "공사 범위" }, { name: "targetSpaces", label: "바꾸고 싶은 공간" },
+    { name: "spaceDetails", label: "공간별로 바꾸고 싶은 항목" }, { name: "spaceDetailsOther", label: "기타 공간 및 항목" },
+    { name: "inconvenience", label: "현재 공간에서 가장 불편하거나 개선하고 싶은 부분" },
+    { name: "skipOk", label: "하지 않아도 되는 공사" }, { name: "priority", label: "가장 중요하게 생각하는 기준" },
+    { name: "nonNegotiable", label: "절대 포기하기 어려운 부분" },
+  ] },
+  { title: "예산 및 일정", fields: [
+    { name: "budget", label: "생각 중인 예산" }, { name: "budgetType", label: "예산 기준" },
+    { name: "moveInDate", label: "입주 예정일" }, { name: "preferredStart", label: "공사 희망 시기" },
+    { name: "livingDuringConstruction", label: "공사 중 거주 여부" }, { name: "scheduleNote", label: "일정 관련 특이사항" },
+  ] },
+  { title: "원하는 분위기", fields: [
+    { name: "styles", label: "원하는 스타일" }, { name: "otherStyle", label: "원하는 스타일 기타" },
+    { name: "colorTone", label: "선호 색감" }, { name: "avoidStyle", label: "피하고 싶은 느낌" },
+  ] },
+  { title: "생활 방식", fields: [
+    { name: "residents", label: "거주 인원" }, { name: "hasChild", label: "아이 여부" },
+    { name: "hasPet", label: "반려동물 여부" }, { name: "storageNeed", label: "수납 필요도" },
+    { name: "cookingFrequency", label: "요리 빈도" }, { name: "workSpace", label: "재택근무·작업공간" },
+    { name: "lifestyleNote", label: "생활 방식 및 취미 관련 특이사항" },
+  ] },
+  { title: "사진 및 참고자료", fields: [
+    { name: "sitePhotos", label: "현장 사진", kind: "files" }, { name: "referenceImages", label: "참고 이미지", kind: "files" },
+    { name: "referenceLinks", label: "참고 링크" }, { name: "referenceLike", label: "참고 자료에서 마음에 드는 부분" },
+  ] },
+  { title: "상담 및 연락 정보", fields: [
+    { name: "ageGroup", label: "연령대" }, { name: "consultationExperience", label: "인테리어 상담 경험" },
+    { name: "decisionStyle", label: "상담 시 원하는 의견 반영 방식" }, { name: "preferredContact", label: "상담 안내를 받으실 연락 방법" },
+    { name: "questions", label: "상담 때 꼭 물어보고 싶은 내용" }, { name: "etc", label: "기타 요청사항" },
+    { name: "name", label: "성함" }, { name: "phone", label: "휴대폰 번호" },
+    { name: "privacyConsent", label: "개인정보 수집 및 이용 동의" },
+  ] },
+];
+
 export const option = (value: string, label = value): ChecklistOption => ({ value, label });
 
 export const timeOptions = Array.from({ length: 23 }, (_, index) => {

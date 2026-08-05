@@ -69,3 +69,21 @@ export interface SpaceDetailGroup {
   space: string;
   options: ChecklistOption[];
 }
+
+export type ChecklistAnswerValue = string | string[] | boolean;
+
+export type ChecklistFormData = ChecklistFormState;
+
+export interface StoredFileInfo {
+  name: string;
+  type: string;
+  size: number;
+}
+
+export interface ChecklistSubmission {
+  submissionId: string;
+  submittedAt: string;
+  answers: Record<string, ChecklistAnswerValue>;
+  sitePhotoFiles: StoredFileInfo[];
+  referenceImageFiles: StoredFileInfo[];
+}

@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { checklistSteps, formatBudget, formatPhone, getLocalToday, initialChecklistState, spaceDetailGroups } from "@/lib/checklist/checklist-data";
-import type { ChecklistFormState } from "@/types/checklist";
+import { createChecklistSubmission, mapSubmissionToConsultation } from "@/lib/consultations/consultation-mapper";
+import { localStorageConsultationRepository } from "@/lib/consultations/local-storage-consultation-repository";
+import type { ChecklistFormData } from "@/types/checklist";
 import { ChecklistIntro } from "./checklist-intro";
 import { ChecklistNavigation } from "./checklist-navigation";
 import { ProgressHeader } from "./progress-header";
@@ -11,7 +14,8 @@ import { SuccessScreen } from "./success-screen";
 import styles from "./checklist.module.css";
 
 export function ChecklistPage() {
-  const [form, setForm] = useState<ChecklistFormState>(() => ({ ...initialChecklistState }));
+  const router = useRouter();
+  const [form, setForm] = useState<ChecklistFormData>(() => ({ ...initialChecklistState }));
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,17 +75,40 @@ export function ChecklistPage() {
   };
 
   const submit = async () => {
-    if (!form.privacyConsent) {
-      setError("제출하려면 개인정보 수집 및 이용에 동의해주세요.");
-      document.querySelector<HTMLInputElement>('input[name="privacyConsent"]')?.focus();
+    const required: { name: keyof ChecklistFormData; label: string; step: number }[] = [
+      { name: "address", label: "현장 주소", step: 0 },
+      { name: "areaSize", label: "평수", step: 0 },
+      { name: "visitDate", label: "상담 희망일", step: 1 },
+      { name: "budget", label: "생각 중인 예산", step: 3 },
+      { name: "name", label: "성함", step: 7 },
+      { name: "phone", label: "휴대폰 번호", step: 7 },
+      { name: "privacyConsent", label: "개인정보 수집 및 이용 동의", step: 7 },
+    ];
+    const missing = required.find(({ name }) => {
+      const value = form[name];
+      return typeof value === "boolean" ? !value : !String(value).trim();
+    });
+    if (missing) {
+      setCurrentStep(missing.step);
+      setError(`${missing.step + 1}단계의 '${missing.label}' 항목을 입력해주세요.`);
+      window.setTimeout(() => {
+        document.querySelector<HTMLElement>(`[name="${String(missing.name)}"]`)?.focus();
+        scrollTop();
+      });
       return;
     }
     setError("");
     setIsSubmitting(true);
-    await new Promise((resolve) => window.setTimeout(resolve, 900));
-    setIsSubmitting(false);
-    setIsComplete(true);
-    scrollTop();
+    try {
+      const submission = createChecklistSubmission(form);
+      localStorageConsultationRepository.save(mapSubmissionToConsultation(submission));
+      setIsComplete(true);
+      scrollTop();
+    } catch {
+      setError("상담 내용을 브라우저에 저장하지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해주세요.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const reset = () => {
@@ -92,7 +119,7 @@ export function ChecklistPage() {
     scrollTop();
   };
 
-  if (isComplete) return <main className={styles.publicPage}><SuccessScreen onReset={reset} /></main>;
+  if (isComplete) return <main className={styles.publicPage}><SuccessScreen onList={() => router.push("/consultations")} onReset={reset} /></main>;
 
   return (
     <main className={styles.publicPage}>

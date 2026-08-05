@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight, ExternalLink, Search, SlidersHorizontal } from "lucide-react";
+import { localStorageConsultationRepository } from "@/lib/consultations/local-storage-consultation-repository";
 import { initialConsultations } from "@/lib/mock/consultations-data";
-import type { Consultation, ConsultationStatus } from "@/types/consultation";
-import { ConsultationModal } from "./consultation-modal";
+import type { ConsultationStatus } from "@/types/consultation";
 import { StatusBadge } from "./status-badge";
 
 const statusFilters: ("전체" | ConsultationStatus)[] = ["전체", "접수", "예약", "완료", "계약"];
@@ -19,14 +20,25 @@ export function ConsultationsPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"전체" | ConsultationStatus>("전체");
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Consultation | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const stored = localStorageConsultationRepository.list()
+        .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
+      setConsultations([...stored, ...initialConsultations]);
+    });
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return consultations
       .filter((item) => statusFilter === "전체" || item.status === statusFilter)
       .filter((item) => !normalizedQuery || `${item.customerName} ${item.region}`.toLowerCase().includes(normalizedQuery))
-      .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
+      .sort((a, b) => {
+        if (a.source !== b.source) return a.source === "stored" ? -1 : 1;
+        return new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime();
+      });
   }, [consultations, query, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -40,7 +52,8 @@ export function ConsultationsPage() {
 
   const changeStatus = (id: string, status: ConsultationStatus) => {
     setConsultations((items) => items.map((item) => item.id === id ? { ...item, status } : item));
-    setSelected((item) => item?.id === id ? { ...item, status } : item);
+    const consultation = consultations.find((item) => item.id === id);
+    if (consultation?.source === "stored") localStorageConsultationRepository.updateStatus(id, status);
   };
 
   return (
@@ -66,7 +79,7 @@ export function ConsultationsPage() {
               {pageItems.map((item) => (
                 <tr key={item.id}>
                   <td><StatusBadge status={item.status} /></td><td><strong>{item.customerName}</strong></td><td>{item.region}</td><td>{item.areaSize}</td><td>{item.visitDate}<small>{item.visitTime}</small></td><td>{item.budget.toLocaleString()}만원</td><td>{formatDate(item.receivedAt)}</td>
-                  <td><button className="original-button" onClick={() => setSelected(item)} type="button">원본 보기 <ExternalLink /></button></td>
+                  <td><Link className="original-button" href={`/consultations/${encodeURIComponent(item.id)}`}>원본 보기 <ExternalLink /></Link></td>
                   <td><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></td>
                 </tr>
               ))}
@@ -79,7 +92,7 @@ export function ConsultationsPage() {
             <article className="consultation-mobile-card" key={item.id}>
               <header><div><StatusBadge status={item.status} /><h2>{item.customerName} 고객님</h2></div><span>{formatDate(item.receivedAt)}</span></header>
               <dl><div><dt>지역</dt><dd>{item.region}</dd></div><div><dt>평수</dt><dd>{item.areaSize}</dd></div><div><dt>상담 희망일</dt><dd>{item.visitDate} {item.visitTime}</dd></div><div><dt>예상 금액</dt><dd>{item.budget.toLocaleString()}만원</dd></div></dl>
-              <footer><button className="original-button" onClick={() => setSelected(item)} type="button">원본 보기 <ExternalLink /></button><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></footer>
+              <footer><Link className="original-button" href={`/consultations/${encodeURIComponent(item.id)}`}>원본 보기 <ExternalLink /></Link><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></footer>
             </article>
           ))}
         </div>
@@ -87,7 +100,6 @@ export function ConsultationsPage() {
         {pageItems.length === 0 && <div className="consultations-empty">검색 조건에 맞는 상담이 없습니다.</div>}
         <footer className="pagination"><span>{(currentPage - 1) * pageSize + (pageItems.length ? 1 : 0)}–{(currentPage - 1) * pageSize + pageItems.length} / {filtered.length}</span><div><button disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))} aria-label="이전 페이지" type="button"><ChevronLeft /></button>{Array.from({ length: totalPages }, (_, index) => index + 1).map((value) => <button className={currentPage === value ? "is-active" : ""} key={value} onClick={() => setPage(value)} type="button">{value}</button>)}<button disabled={currentPage === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))} aria-label="다음 페이지" type="button"><ChevronRight /></button></div></footer>
       </section>
-      {selected && <ConsultationModal consultation={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import type { ChecklistAnswerValue, StoredFileInfo } from "./checklist";
+
 export type ConsultationStatus = "접수" | "예약" | "완료" | "계약";
 
 export interface Consultation {
@@ -16,4 +18,20 @@ export interface Consultation {
   request: string;
   style: string;
   family: string;
+  source?: "mock" | "stored";
+  originalAnswers?: Record<string, ChecklistAnswerValue>;
+  sitePhotoFiles?: StoredFileInfo[];
+  referenceImageFiles?: StoredFileInfo[];
+}
+
+export interface StoredConsultation extends Consultation {
+  source: "stored";
+  originalAnswers: Record<string, ChecklistAnswerValue>;
+  sitePhotoFiles: StoredFileInfo[];
+  referenceImageFiles: StoredFileInfo[];
+}
+
+export interface StoredConsultationsDocument {
+  version: 1;
+  consultations: StoredConsultation[];
 }

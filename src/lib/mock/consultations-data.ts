@@ -15,6 +15,7 @@ export const initialConsultations: Consultation[] = names.map((customerName, ind
   const areaSize = areas[index % areas.length];
   return {
     id: `CONS-202608-${String(index + 1).padStart(3, "0")}`,
+    source: "mock",
     status: statuses[index % statuses.length],
     customerName,
     phone: `010-${String(2345 + index * 17).padStart(4, "0")}-${String(7812 + index * 7).slice(-4)}`,
