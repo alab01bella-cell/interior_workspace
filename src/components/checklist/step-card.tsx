@@ -1,6 +1,7 @@
 import type { ChangeEvent, ReactNode } from "react";
 import { checklistSteps, option, spaceDetailGroups, timeOptions } from "@/lib/checklist/checklist-data";
 import type { ChecklistFormState, ChecklistOption } from "@/types/checklist";
+import { AddressSearchField } from "./address-search-field";
 import { FilePicker } from "./file-picker";
 import { OptionChip } from "./option-chip";
 import styles from "./checklist.module.css";
@@ -79,8 +80,13 @@ export function StepCard(props: StepCardProps) {
       <div className={styles.stepHeading}><span>STEP {currentStep + 1}</span><h2>{currentStep + 1}. {checklistSteps[currentStep].title}</h2><p>{checklistSteps[currentStep].guide}</p></div>
       <div className={styles.fields}>
         {currentStep === 0 && <>
-          <TextField form={form} label="현장 주소" name="address" onChange={setText} placeholder="현장 주소를 입력해주세요." />
-          <TextField form={form} label="상세주소" name="addressDetail" onChange={setText} placeholder="동/호수, 건물명 등 상세주소" />
+          <AddressSearchField
+            address={form.address}
+            addressDetail={form.addressDetail}
+            onAddressChange={(value) => setText("address", value)}
+            onAddressDetailChange={(value) => setText("addressDetail", value)}
+            onError={setError}
+          />
           {choices("공간 형태", "housingType", options.housingType)}
           {form.housingType === "기타" && <TextField form={form} label="기타 공간 형태" name="housingTypeOther" onChange={setText} placeholder="공간 형태를 입력해주세요." />}
           {choices("평수", "areaSize", options.areaSize)}
@@ -91,7 +97,7 @@ export function StepCard(props: StepCardProps) {
         </>}
 
         {currentStep === 1 && <>
-          <Field hint="오늘을 포함한 이후 날짜만 선택할 수 있습니다." label="대면상담 희망일"><input min={minDate} name="visitDate" onChange={(event) => setText("visitDate", event.target.value)} type="date" value={form.visitDate} /></Field>
+          <Field hint="오늘 이후의 날짜만 선택할 수 있습니다." label="대면상담 희망일"><input min={minDate} name="visitDate" onChange={(event) => setText("visitDate", event.target.value)} type="date" value={form.visitDate} /></Field>
           <Field label="대면상담 희망 시간"><select name="visitTime" onChange={(event) => setText("visitTime", event.target.value)} value={form.visitTime}><option value="">시간을 선택해주세요.</option>{timeOptions.map((item) => <option key={item.value}>{item.value}</option>)}</select></Field>
           {choices("유선안내 가능 요일", "callDays", options.callDays, "checkbox")}
           <Field label="유선안내 가능 시간"><select name="callTime" onChange={(event) => setText("callTime", event.target.value)} value={form.callTime}><option value="">시간을 선택해주세요.</option>{timeOptions.map((item) => <option key={item.value}>{item.value}</option>)}</select></Field>
@@ -113,7 +119,7 @@ export function StepCard(props: StepCardProps) {
         {currentStep === 3 && <>
           <Field label="생각 중인 예산"><div className={styles.suffixInput}><input inputMode="numeric" name="budget" onChange={(event) => setText("budget", event.target.value)} value={form.budget} /><span>만원</span></div></Field>
           {choices("예산 기준", "budgetType", options.budgetType)}
-          <Field hint="오늘을 포함한 이후 날짜만 선택할 수 있습니다." label="입주 예정일"><input min={minDate} name="moveInDate" onChange={(event) => setText("moveInDate", event.target.value)} type="date" value={form.moveInDate} /></Field>
+          <Field hint="오늘 이후의 날짜만 선택할 수 있습니다." label="입주 예정일"><input min={minDate} name="moveInDate" onChange={(event) => setText("moveInDate", event.target.value)} type="date" value={form.moveInDate} /></Field>
           {choices("공사 희망 시기", "preferredStart", options.preferredStart)}
           {choices("공사 중 거주 여부", "livingDuringConstruction", options.livingDuringConstruction)}
           <TextField form={form} label="일정 관련 특이사항" name="scheduleNote" onChange={setText} placeholder="예: 이사일이 정해져 있어요. 특정 날짜 전까지 끝나야 해요." textarea />

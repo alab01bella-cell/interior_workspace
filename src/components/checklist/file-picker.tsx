@@ -16,6 +16,7 @@ export function FilePicker({ files, hint, label, name, onChange, onError }: File
 
   const selectFiles = (selected: FileList | null) => {
     if (!selected) return;
+    onError("");
     const imageFiles = Array.from(selected).filter((file) => file.type.startsWith("image/"));
     if (imageFiles.length !== selected.length) onError("이미지 파일만 선택할 수 있습니다.");
     if (imageFiles.length > 10) onError("파일은 각각 최대 10개까지 선택할 수 있습니다.");

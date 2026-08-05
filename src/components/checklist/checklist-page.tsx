@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { checklistSteps, formatBudget, formatPhone, getLocalToday, initialChecklistState, spaceDetailGroups } from "@/lib/checklist/checklist-data";
 import { createChecklistSubmission, mapSubmissionToConsultation } from "@/lib/consultations/consultation-mapper";
@@ -20,6 +20,7 @@ export function ChecklistPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const submissionInProgress = useRef(false);
   const minDate = useMemo(() => getLocalToday(), []);
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
@@ -29,7 +30,7 @@ export function ChecklistPage() {
     if (name === "phone") value = formatPhone(value);
     if (name === "budget") value = formatBudget(value);
     if ((name === "visitDate" || name === "moveInDate") && value && value < minDate) {
-      setError("오늘보다 이전 날짜는 선택할 수 없습니다.");
+      setError("지난 날짜는 선택할 수 없습니다.");
       value = "";
     } else setError("");
     setForm((state) => ({ ...state, [name]: value }));
@@ -75,6 +76,7 @@ export function ChecklistPage() {
   };
 
   const submit = async () => {
+    if (submissionInProgress.current) return;
     const required: { name: keyof ChecklistFormData; label: string; step: number }[] = [
       { name: "address", label: "현장 주소", step: 0 },
       { name: "areaSize", label: "평수", step: 0 },
@@ -98,6 +100,7 @@ export function ChecklistPage() {
       return;
     }
     setError("");
+    submissionInProgress.current = true;
     setIsSubmitting(true);
     try {
       const submission = createChecklistSubmission(form);
@@ -105,6 +108,7 @@ export function ChecklistPage() {
       setIsComplete(true);
       scrollTop();
     } catch {
+      submissionInProgress.current = false;
       setError("상담 내용을 브라우저에 저장하지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해주세요.");
     } finally {
       setIsSubmitting(false);
@@ -112,6 +116,7 @@ export function ChecklistPage() {
   };
 
   const reset = () => {
+    submissionInProgress.current = false;
     setForm({ ...initialChecklistState });
     setCurrentStep(0);
     setError("");
@@ -130,7 +135,7 @@ export function ChecklistPage() {
           <form onSubmit={(event) => { event.preventDefault(); if (currentStep === checklistSteps.length - 1) void submit(); }}>
             <StepCard currentStep={currentStep} form={form} minDate={minDate} setConsent={(checked) => setForm((state) => ({ ...state, privacyConsent: checked }))} setError={setError} setFiles={(name, files) => setForm((state) => ({ ...state, [name]: files }))} setMultiple={updateMultiple} setSingle={updateSingle} setText={updateText} />
             {error && <div aria-live="assertive" className={styles.error} role="alert">{error}</div>}
-            <ChecklistNavigation currentStep={currentStep} isSubmitting={isSubmitting} onNext={() => currentStep === checklistSteps.length - 1 ? undefined : move(1)} onPrevious={() => move(-1)} totalSteps={checklistSteps.length} />
+            <ChecklistNavigation currentStep={currentStep} isSubmitting={isSubmitting} onNext={() => move(1)} onPrevious={() => move(-1)} onSubmit={() => void submit()} totalSteps={checklistSteps.length} />
           </form>
         </div>
       </div>

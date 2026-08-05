@@ -36,7 +36,11 @@ export class LocalStorageConsultationRepository implements ConsultationRepositor
       if (!raw) return emptyDocument();
       const parsed = JSON.parse(raw) as Partial<StoredConsultationsDocument>;
       if (parsed.version !== 1 || !Array.isArray(parsed.consultations)) return emptyDocument();
-      return { version: 1, consultations: parsed.consultations.filter(isStoredConsultation) };
+      const consultations = parsed.consultations.filter(isStoredConsultation);
+      return {
+        version: 1,
+        consultations: consultations.filter((item, index) => consultations.findIndex((candidate) => candidate.id === item.id) === index),
+      };
     } catch {
       return emptyDocument();
     }

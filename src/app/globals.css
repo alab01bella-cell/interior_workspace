@@ -80,6 +80,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   text-decoration: none;
   transition: background .18s ease, color .18s ease, transform .18s ease;
 }
+.sidebar-link span { white-space: nowrap; }
 .sidebar-link svg { width: 20px; height: 20px; flex: none; stroke-width: 1.8; }
 .sidebar-link:hover, .sidebar-link.is-active { color: #fff; background: rgba(255,255,255,.15); transform: translateX(1px); }
 .mobile-header { display: none; }
@@ -135,8 +136,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   box-shadow: var(--shadow-card);
   color: inherit;
   text-decoration: none;
+  transition: transform .18s ease, box-shadow .18s ease;
 }
 .stat-card--featured { color: #fff; background: var(--brand); border-color: transparent; }
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 16px 34px rgba(25, 27, 31, .09); }
 .stat-card-label { display: flex; align-items: center; gap: 7px; font-size: 17px; font-weight: 600; }
 .stat-card-label svg { width: 18px; height: 18px; stroke-width: 1.7; }
 .stat-card p { display: flex; align-items: baseline; justify-content: center; gap: 5px; margin: 12px 0 0; }
@@ -154,13 +157,14 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .panel-title svg { width: 15px; height: 15px; color: var(--brand-strong); stroke-width: 1.8; }
 .panel-title h2 { margin: 0; font-size: 19px; font-weight: 700; }
 .schedule-card, .todo-card { display: flex; min-height: 0; flex-direction: column; padding: 12px 16px 26px; overflow: hidden; }
-.schedule-list { display: grid; grid-template-rows: repeat(5, minmax(0, 1fr)); min-height: 0; flex: 1; margin-top: 5px; }
+.schedule-list { display: grid; grid-auto-rows: minmax(44px, auto); min-height: 0; flex: 1; margin-top: 5px; overflow: auto; }
 .schedule-item { display: grid; grid-template-columns: 58px 7px 1fr; gap: 8px; align-items: center; min-height: 0; padding: 4px; color: inherit; border-top: 1px dashed var(--line); text-decoration: none; }
 .schedule-item time { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .schedule-dot { width: 7px; height: 7px; background: var(--brand); border-radius: 50%; }
 .schedule-item strong { display: block; font-size: 17px; font-weight: 600; line-height: 1.1; }
 .schedule-item strong .status-badge { min-width: 36px; height: 20px; margin-left: 4px; padding: 0 6px; font-size: 9px; vertical-align: 2px; }
 .schedule-item p { margin: 1px 0 0; overflow: hidden; color: var(--muted); font-size: 15px; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+.schedule-item:hover, .recent-item:hover { background: #fff8ef; }
 .text-link { position: absolute; right: 14px; bottom: 7px; padding: 0; color: var(--muted); background: transparent; border: 0; font-size: 14px; text-decoration: none; cursor: pointer; }
 .text-link span { margin-left: 3px; color: var(--brand-strong); font-size: 18px; vertical-align: -2px; }
 .todo-list { display: grid; grid-template-rows: repeat(5, minmax(0, 1fr)); min-height: 0; flex: 1; gap: 0; margin-top: 5px; }
@@ -282,6 +286,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .detail-summary-grid p:nth-child(4) { grid-column: span 2; }
 .detail-summary-grid svg { width: 18px; flex: none; color: var(--brand-strong); }
 .detail-summary-grid small { display: block; margin-bottom: 3px; color: var(--muted); font-size: 10px; }
+.detail-summary-grid p > span { min-width: 0; overflow-wrap: anywhere; }
 .answer-sections { display: grid; gap: 14px; margin-top: 18px; }
 .answer-section { padding: 20px; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-card); }
 .answer-section > header { display: flex; align-items: baseline; gap: 9px; padding-bottom: 13px; border-bottom: 1px solid var(--line); }
