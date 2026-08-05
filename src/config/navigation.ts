@@ -1,5 +1,6 @@
 import {
   CalendarDays,
+  ClipboardCheck,
   FileImage,
   Files,
   FolderOpen,
@@ -27,6 +28,7 @@ export const primaryNavigation: readonly NavigationItem[] = [
 ];
 
 export const utilityNavigation: readonly NavigationItem[] = [
+  { label: "체크리스트", href: "/consult/demo", icon: ClipboardCheck },
   { label: "setting", href: "#", icon: Settings },
   { label: "logout", href: "#", icon: LogOut },
 ];
