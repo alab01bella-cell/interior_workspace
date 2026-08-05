@@ -18,8 +18,8 @@ interface NavigationItem {
 }
 
 export const primaryNavigation: readonly NavigationItem[] = [
-  { label: "대시보드", href: "/", icon: LayoutDashboard, active: true },
-  { label: "상담목록", href: "#", icon: ListFilter },
+  { label: "대시보드", href: "/", icon: LayoutDashboard },
+  { label: "상담목록", href: "/consultations", icon: ListFilter },
   { label: "예약", href: "#", icon: CalendarDays },
   { label: "서류", href: "#", icon: Files },
   { label: "이미지", href: "#", icon: FileImage },
