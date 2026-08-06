@@ -2,7 +2,7 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthConfig } from "@/lib/auth/config";
 import { clearOAuthCookie, OAUTH_COOKIE, setSession, unseal } from "@/lib/auth/session";
-import type { AuthUser } from "@/types/auth";
+import { findOrCreateGoogleUser, toAuthUser } from "@/lib/auth/user-repository";
 
 export const runtime = "nodejs";
 
@@ -59,14 +59,15 @@ export async function GET(request: NextRequest) {
       throw new Error("invalid_profile");
     }
 
-    const user: AuthUser = {
+    const user = await findOrCreateGoogleUser({
       googleSub: payload.sub,
       email: payload.email,
-      name: payload.name,
-      profileImage: typeof payload.picture === "string" ? payload.picture : undefined,
-    };
-    const response = NextResponse.redirect(`${config.baseUrl}/dashboard`);
-    await setSession(response, user);
+      googleName: payload.name,
+      profileImageUrl: typeof payload.picture === "string" ? payload.picture : null,
+    });
+    const destination = user.onboardingCompleted ? "/dashboard" : "/onboarding";
+    const response = NextResponse.redirect(`${config.baseUrl}${destination}`);
+    await setSession(response, toAuthUser(user));
     clearOAuthCookie(response);
     return response;
   } catch (error) {

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth/session";
+import { getAuthenticatedDestination } from "@/lib/auth/require-user";
 
 export default async function HomePage() {
-  redirect(await getCurrentUser() ? "/dashboard" : "/login");
+  redirect(await getAuthenticatedDestination());
 }

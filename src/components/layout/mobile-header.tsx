@@ -5,10 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { primaryNavigation, utilityNavigation } from "@/config/navigation";
-import type { AuthUser } from "@/types/auth";
+import type { WorkspaceIdentity } from "@/types/workspace";
 import { AvatarMark } from "./avatar-mark";
 
-export function MobileHeader({ user }: { user: AuthUser }) {
+export function MobileHeader({ identity }: { identity: WorkspaceIdentity }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -33,8 +33,8 @@ export function MobileHeader({ user }: { user: AuthUser }) {
         <div className="mobile-menu-backdrop" onClick={() => setIsOpen(false)}>
           <nav className="mobile-menu" aria-label="모바일 메뉴" onClick={(event) => event.stopPropagation()}>
             <div className="mobile-menu-profile">
-              <AvatarMark compact imageUrl={user.profileImage} />
-              <div><strong>{user.name}</strong><span>{user.email}</span></div>
+              <AvatarMark compact imageUrl={identity.profileImageUrl ?? undefined} />
+              <div><strong>{identity.workspaceName}</strong><span>{identity.displayName} · {identity.email}</span></div>
             </div>
             {[...primaryNavigation, ...utilityNavigation].map(({ label, href, icon: Icon }) => {
               const active = href !== "#" && pathname.startsWith(href);

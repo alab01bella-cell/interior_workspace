@@ -96,3 +96,28 @@ npm run build:cloudflare
 ```
 
 실제 Google 로그인 성공 검증에는 Google Cloud OAuth 설정과 유효한 런타임 환경변수가 필요합니다.
+
+## Cloudflare D1
+
+애플리케이션은 `DB` binding을 통해 D1에 접근합니다. `wrangler.jsonc`의 `database_id` placeholder는 실제 D1을 생성한 뒤 발급된 ID로 교체합니다.
+
+로컬 migration 적용과 확인:
+
+```bash
+npx wrangler d1 migrations apply interior-workspace --local
+npx wrangler d1 migrations list interior-workspace --local
+```
+
+개발 seed는 migration과 분리되어 운영에 자동 적용되지 않습니다. 필요한 경우 로컬 DB에만 명시적으로 실행합니다.
+
+```bash
+npx wrangler d1 execute interior-workspace --local --file=./seeds/development.sql
+```
+
+운영 D1을 생성하고 `database_id`를 설정한 이후 운영 migration은 다음처럼 별도로 적용합니다.
+
+```bash
+npx wrangler d1 migrations apply interior-workspace --remote
+```
+
+운영 migration은 적용 전에 Cloudflare D1 백업과 대상 database 확인을 선행합니다.

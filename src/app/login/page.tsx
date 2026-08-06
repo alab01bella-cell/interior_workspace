@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth/session";
+import { getAuthenticatedDestination } from "@/lib/auth/require-user";
 
 const errorMessages: Record<string, string> = {
   access_denied: "Google 로그인이 취소되었습니다.",
@@ -21,7 +21,8 @@ function GoogleMark() {
 }
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  if (await getCurrentUser()) redirect("/dashboard");
+  const destination = await getAuthenticatedDestination();
+  if (destination !== "/login") redirect(destination);
   const { error } = await searchParams;
   return (
     <main className="login-page">

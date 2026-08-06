@@ -1,8 +1,9 @@
 import { CloudSun } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { DashboardDataSection } from "@/components/dashboard/dashboard-data-section";
-import { requireUser } from "@/lib/auth/require-user";
+import { requireWorkspace } from "@/lib/auth/require-user";
 import { mockUser } from "@/lib/mock/dashboard-data";
+import { toWorkspaceIdentity } from "@/lib/workspaces/workspace-repository";
 
 function getKoreanDate() {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -15,13 +16,15 @@ function getKoreanDate() {
 }
 
 export default async function DashboardPage() {
-  const user = await requireUser();
+  const context = await requireWorkspace();
+  const identity = toWorkspaceIdentity(context);
+  const greetingName = identity.jobTitle ? `${identity.displayName} ${identity.jobTitle}` : identity.displayName;
   return (
-    <AppShell user={user}>
+    <AppShell identity={identity}>
       <section className="welcome-section">
         <div>
           <p className="eyebrow">INTERIOR WORKSPACE</p>
-          <h1>{user.name}님, 좋은 아침입니다.</h1>
+          <h1>{greetingName}님, 좋은 아침입니다.</h1>
           <p className="today">오늘은 {getKoreanDate()}</p>
         </div>
         <div className="weather-card" aria-label="부산광역시 재송동 날씨 28도, 강수확률 20퍼센트">

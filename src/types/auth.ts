@@ -1,6 +1,7 @@
 export interface AuthUser {
+  id: string;
   googleSub: string;
   email: string;
-  name: string;
-  profileImage?: string;
+  googleName: string;
+  profileImageUrl: string | null;
 }

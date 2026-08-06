@@ -2,20 +2,20 @@ import type { ReactNode } from "react";
 import { MobileHeader } from "./mobile-header";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
-import type { AuthUser } from "@/types/auth";
+import type { WorkspaceIdentity } from "@/types/workspace";
 
 interface AppShellProps {
   children: ReactNode;
-  user: AuthUser;
+  identity: WorkspaceIdentity;
 }
 
-export function AppShell({ children, user }: AppShellProps) {
+export function AppShell({ children, identity }: AppShellProps) {
   return (
     <div className="app-shell">
-      <Sidebar user={user} />
-      <MobileHeader user={user} />
+      <Sidebar identity={identity} />
+      <MobileHeader identity={identity} />
       <main className="main-content">
-        <Topbar user={user} />
+        <Topbar identity={identity} />
         {children}
       </main>
     </div>

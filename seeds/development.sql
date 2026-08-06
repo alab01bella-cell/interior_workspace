@@ -1,0 +1,3 @@
+-- 개발 전용 seed 파일입니다.
+-- 운영 migration에는 포함되지 않으며 명시적으로 --local과 함께 실행해야 합니다.
+-- 예: npx wrangler d1 execute interior-workspace --local --file=./seeds/development.sql

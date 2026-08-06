@@ -1,8 +1,9 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { ConsultationDetailPage } from "@/components/consultations/consultation-detail-page";
-import { requireUser } from "@/lib/auth/require-user";
+import { requireWorkspace } from "@/lib/auth/require-user";
+import { toWorkspaceIdentity } from "@/lib/workspaces/workspace-repository";
 
 export default async function ConsultationDetailRoute() {
-  const user = await requireUser();
-  return <AppShell user={user}><ConsultationDetailPage /></AppShell>;
+  const context = await requireWorkspace();
+  return <AppShell identity={toWorkspaceIdentity(context)}><ConsultationDetailPage /></AppShell>;
 }

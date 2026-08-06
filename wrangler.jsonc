@@ -2,12 +2,21 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "interior-workspace",
   "main": ".open-next/worker.js",
+  "keep_vars": true,
   "compatibility_date": "2026-08-05",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "interior-workspace-db",
+      "database_id": "de8b2896-4bb2-432a-8875-c50e3e4a8529",
+      "migrations_dir": "migrations"
+    }
+  ],
   "observability": {
     "enabled": true
   }

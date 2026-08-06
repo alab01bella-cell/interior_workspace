@@ -1,8 +1,8 @@
 import { Bell, Search, UserPlus } from "lucide-react";
-import type { AuthUser } from "@/types/auth";
+import type { WorkspaceIdentity } from "@/types/workspace";
 import { AvatarMark } from "./avatar-mark";
 
-export function Topbar({ user }: { user: AuthUser }) {
+export function Topbar({ identity }: { identity: WorkspaceIdentity }) {
   return (
     <header className="topbar">
       <label className="search-field">
@@ -19,10 +19,10 @@ export function Topbar({ user }: { user: AuthUser }) {
           <span aria-hidden="true" />
         </button>
         <div className="topbar-profile">
-          <AvatarMark compact imageUrl={user.profileImage} />
+          <AvatarMark compact imageUrl={identity.profileImageUrl ?? undefined} />
           <div>
-            <strong>{user.name}</strong>
-            <span>{user.email}</span>
+            <strong>{identity.displayName}</strong>
+            <span>{identity.workspaceName} · {identity.email}</span>
           </div>
         </div>
       </div>

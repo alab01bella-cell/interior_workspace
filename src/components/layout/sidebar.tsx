@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { primaryNavigation, utilityNavigation } from "@/config/navigation";
-import type { AuthUser } from "@/types/auth";
+import type { WorkspaceIdentity } from "@/types/workspace";
 import { AvatarMark } from "./avatar-mark";
 
-export function Sidebar({ user }: { user: AuthUser }) {
+export function Sidebar({ identity }: { identity: WorkspaceIdentity }) {
   const pathname = usePathname();
 
   return (
@@ -17,8 +17,8 @@ export function Sidebar({ user }: { user: AuthUser }) {
       </Link>
 
       <div className="sidebar-profile">
-        <AvatarMark imageUrl={user.profileImage} />
-        <span>{user.name}</span>
+        <AvatarMark imageUrl={identity.profileImageUrl ?? undefined} />
+        <div><strong>{identity.workspaceName}</strong><span>{identity.displayName}</span></div>
       </div>
 
       <nav className="sidebar-nav" aria-label="주 메뉴">

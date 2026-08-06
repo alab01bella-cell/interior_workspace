@@ -67,7 +67,10 @@ const cookieOptions = (maxAge: number) => ({
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  return token ? unseal<AuthUser>(token) : null;
+  if (!token) return null;
+  const user = await unseal<AuthUser>(token);
+  if (!user || typeof user.id !== "string" || typeof user.googleSub !== "string" || typeof user.email !== "string") return null;
+  return user;
 }
 
 export async function setSession(response: NextResponse, user: AuthUser) {
