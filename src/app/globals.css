@@ -63,6 +63,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   border-radius: 999px;
 }
 .avatar-mark svg { width: 60px; height: 60px; }
+.avatar-photo { width: 100%; height: 100%; background-position: center; background-size: cover; border-radius: inherit; }
 .avatar-mark--compact { width: 36px; height: 36px; color: var(--brand-strong); border: 1px solid #ffe0bd; background: #fff8ef; }
 .avatar-mark--compact svg { width: 22px; height: 22px; }
 .sidebar-nav { display: grid; gap: 8px; margin-top: 72px; }
@@ -83,6 +84,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .sidebar-link span { white-space: nowrap; }
 .sidebar-link svg { width: 20px; height: 20px; flex: none; stroke-width: 1.8; }
 .sidebar-link:hover, .sidebar-link.is-active { color: #fff; background: rgba(255,255,255,.15); transform: translateX(1px); }
+.sidebar-link--button { width: 100%; border: 0; text-align: left; cursor: pointer; }
 .mobile-header { display: none; }
 
 .main-content { display: flex; width: 100%; height: 100vh; min-height: 650px; flex-direction: column; overflow: hidden; padding: 26px clamp(32px, 4vw, 64px) 28px; }
@@ -112,6 +114,22 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .topbar-profile strong, .topbar-profile span { display: block; }
 .topbar-profile strong { font-size: 16px; }
 .topbar-profile span { margin-top: 1px; color: var(--muted); font-size: 14px; }
+
+/* Authentication */
+.login-page { display: grid; min-height: 100vh; padding: 28px; place-items: center; background: radial-gradient(circle at 15% 18%, #fff1df 0, transparent 32%), linear-gradient(145deg, #f7f7f8, #eceef1); }
+.login-card { width: min(480px, 100%); padding: clamp(34px, 6vw, 58px); background: rgba(255,255,255,.94); border: 1px solid rgba(255,255,255,.9); border-radius: 26px; box-shadow: 0 28px 80px rgba(25,27,31,.1); }
+.login-brand { display: flex; align-items: center; gap: 8px; color: var(--brand-strong); font-size: 13px; font-weight: 800; letter-spacing: .08em; }
+.login-brand span { width: 10px; height: 10px; background: var(--brand); border-radius: 50%; box-shadow: 0 0 0 5px #fff0df; }
+.login-eyebrow { margin: 54px 0 8px; color: var(--brand-strong); font-size: 11px; font-weight: 800; letter-spacing: .14em; }
+.login-card h1 { margin: 0; font-size: clamp(31px, 5vw, 40px); letter-spacing: -.055em; line-height: 1.2; }
+.login-description { margin: 16px 0 0; color: #71747a; font-size: 14px; line-height: 1.7; }
+.login-error { margin-top: 22px; padding: 12px 14px; color: #a53b31; background: #fff0ee; border: 1px solid #ffd3ce; border-radius: 10px; font-size: 13px; }
+.google-login-button { display: flex; min-height: 54px; align-items: center; justify-content: center; gap: 12px; margin-top: 28px; color: #303236; background: #fff; border: 1px solid #dedfe2; border-radius: 12px; box-shadow: 0 6px 18px rgba(25,27,31,.055); font-size: 15px; font-weight: 700; text-decoration: none; transition: transform .18s ease, box-shadow .18s ease; }
+.google-login-button:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(25,27,31,.09); }
+.google-login-button svg { width: 21px; height: 21px; }
+.login-scope-notice { margin: 12px 0 0; color: #999ba0; font-size: 11px; text-align: center; }
+.demo-link { display: block; margin-top: 34px; color: var(--brand-strong); font-size: 13px; font-weight: 700; text-align: center; text-decoration: none; }
+.prototype-data-notice { margin-top: 14px; padding: 10px 12px; color: #8a4b00; background: #fff6e9; border: 1px solid #ffe0b8; border-radius: 9px; font-size: 12px; }
 
 .welcome-section { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-top: clamp(24px, 4vh, 40px); }
 .eyebrow { margin: 0 0 6px; color: var(--brand-strong); font-size: 14px; font-weight: 700; letter-spacing: .12em; }
@@ -343,9 +361,14 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .icon-button--light:hover { background: rgba(255,255,255,.14); }
   .mobile-menu-backdrop { position: fixed; inset: 60px 0 0; z-index: 29; background: rgba(23, 24, 27, .22); backdrop-filter: blur(2px); }
   .mobile-menu { display: grid; gap: 5px; width: min(280px, calc(100vw - 42px)); height: 100%; padding: 18px; background: #fff; box-shadow: 18px 0 40px rgba(24, 25, 28, .14); animation: menu-in .18s ease-out; }
+  .mobile-menu-profile { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 4px 8px 14px; border-bottom: 1px solid var(--line); }
+  .mobile-menu-profile strong, .mobile-menu-profile span { display: block; }
+  .mobile-menu-profile strong { font-size: 13px; }
+  .mobile-menu-profile span { max-width: 180px; margin-top: 2px; overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; }
   .mobile-menu-link { display: flex; min-height: 44px; align-items: center; gap: 12px; padding: 0 13px; color: #60636a; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; }
   .mobile-menu-link svg { width: 18px; height: 18px; color: var(--brand-strong); stroke-width: 1.8; }
   .mobile-menu-link.is-active { color: var(--brand-strong); background: #fff4e8; }
+  .mobile-menu-link--button { width: 100%; border: 0; text-align: left; cursor: pointer; }
   @keyframes menu-in { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
   .main-content { height: auto; min-height: calc(100vh - 60px); overflow: visible; padding: 18px 16px 28px; }
   .topbar { gap: 12px; }
@@ -397,6 +420,8 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 
 @media (max-width: 420px) {
+  .login-page { padding: 0; }
+  .login-card { min-height: 100vh; padding: 34px 24px; border-radius: 0; }
   .welcome-section h1 { max-width: 200px; font-size: 21px; }
   .eyebrow { display: none; }
   .today { font-size: 10px; }

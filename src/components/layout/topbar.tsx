@@ -1,8 +1,8 @@
 import { Bell, Search, UserPlus } from "lucide-react";
-import { mockUser } from "@/lib/mock/dashboard-data";
+import type { AuthUser } from "@/types/auth";
 import { AvatarMark } from "./avatar-mark";
 
-export function Topbar() {
+export function Topbar({ user }: { user: AuthUser }) {
   return (
     <header className="topbar">
       <label className="search-field">
@@ -19,10 +19,10 @@ export function Topbar() {
           <span aria-hidden="true" />
         </button>
         <div className="topbar-profile">
-          <AvatarMark compact />
+          <AvatarMark compact imageUrl={user.profileImage} />
           <div>
-            <strong>{mockUser.name}</strong>
-            <span>관리자</span>
+            <strong>{user.name}</strong>
+            <span>{user.email}</span>
           </div>
         </div>
       </div>

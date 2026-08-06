@@ -5,8 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { primaryNavigation, utilityNavigation } from "@/config/navigation";
+import type { AuthUser } from "@/types/auth";
+import { AvatarMark } from "./avatar-mark";
 
-export function MobileHeader() {
+export function MobileHeader({ user }: { user: AuthUser }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -30,8 +32,17 @@ export function MobileHeader() {
       {isOpen && (
         <div className="mobile-menu-backdrop" onClick={() => setIsOpen(false)}>
           <nav className="mobile-menu" aria-label="모바일 메뉴" onClick={(event) => event.stopPropagation()}>
+            <div className="mobile-menu-profile">
+              <AvatarMark compact imageUrl={user.profileImage} />
+              <div><strong>{user.name}</strong><span>{user.email}</span></div>
+            </div>
             {[...primaryNavigation, ...utilityNavigation].map(({ label, href, icon: Icon }) => {
-              const active = href === "/" ? pathname === "/" : href !== "#" && pathname.startsWith(href);
+              const active = href !== "#" && pathname.startsWith(href);
+              if (label === "logout") return (
+                <form action="/api/auth/logout" key={label} method="post">
+                  <button className="mobile-menu-link mobile-menu-link--button" type="submit"><Icon aria-hidden="true" /><span>로그아웃</span></button>
+                </form>
+              );
               return (
               <Link
                 className={`mobile-menu-link${active ? " is-active" : ""}`}
