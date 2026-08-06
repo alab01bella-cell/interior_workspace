@@ -29,6 +29,6 @@ export const primaryNavigation: readonly NavigationItem[] = [
 
 export const utilityNavigation: readonly NavigationItem[] = [
   { label: "체크리스트", href: "/consult/demo", icon: ClipboardCheck },
-  { label: "setting", href: "#", icon: Settings },
+  { label: "설정", href: "/settings/integrations", icon: Settings },
   { label: "logout", href: "#", icon: LogOut },
 ];

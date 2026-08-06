@@ -4,6 +4,28 @@ export type MembershipStatus = "ACTIVE" | "INACTIVE" | "REMOVED";
 export type WorkspaceRole = "OWNER" | "ADMIN" | "MEMBER";
 export type WorkspacePlan = "FREE" | "PRO" | "BUSINESS";
 export type GoogleDriveConnectionStatus = "DISCONNECTED" | "CONNECTED" | "ERROR";
+export type DriveConnectionStatus = "CONNECTED" | "REVOKED" | "ERROR";
+
+export interface WorkspaceGoogleConnection {
+  id: string;
+  workspaceId: string;
+  connectedByUserId: string;
+  googleAccountEmail: string;
+  encryptedRefreshToken: string | null;
+  tokenIv: string | null;
+  tokenAuthTag: string | null;
+  grantedScopes: string[];
+  driveRootFolderId: string | null;
+  connectionStatus: DriveConnectionStatus;
+  connectedAt: string;
+  updatedAt: string;
+  revokedAt: string | null;
+}
+
+export type PublicWorkspaceGoogleConnection = Omit<
+  WorkspaceGoogleConnection,
+  "encryptedRefreshToken" | "tokenIv" | "tokenAuthTag"
+>;
 
 export interface User {
   id: string;

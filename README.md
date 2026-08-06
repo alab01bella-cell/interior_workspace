@@ -30,7 +30,22 @@ http://localhost:3000/api/auth/google/callback
 https://<worker-name>.<subdomain>.workers.dev/api/auth/google/callback
 ```
 
-요청 scope는 `openid email profile`뿐입니다. Drive 권한과 오프라인 접근을 요청하지 않으며 refresh token을 저장하지 않습니다.
+로그인 요청 scope는 `openid email profile`뿐입니다. Drive 권한은 로그인·온보딩 이후 설정 화면에서 별도 동의를 받습니다.
+
+### Google Drive 연결 수동 설정
+
+Google Cloud Console에서 다음 작업은 운영자가 직접 수행해야 합니다.
+
+1. **API 및 서비스 > 라이브러리**에서 Google Drive API를 활성화합니다.
+2. OAuth 동의 화면의 **Data Access**에 `https://www.googleapis.com/auth/drive.file` scope를 추가합니다. 전체 Drive scope는 추가하지 않습니다.
+3. 기존 웹 OAuth 클라이언트에 아래 리디렉션 URI를 정확히 추가합니다.
+
+```text
+http://localhost:3000/api/google/drive/callback
+https://interior-workspace.alab01bella.workers.dev/api/google/drive/callback
+```
+
+Drive 동의 요청은 `access_type=offline`, `prompt=consent`, `include_granted_scopes=true`, state 검증과 PKCE를 사용합니다. Workspace OWNER만 연결할 수 있습니다.
 
 ## 환경변수
 
@@ -40,6 +55,7 @@ https://<worker-name>.<subdomain>.workers.dev/api/auth/google/callback
 | `GOOGLE_CLIENT_SECRET` | 예 | 런타임 | authorization code 교환용 비밀값 |
 | `AUTH_SECRET` | 예 | 런타임 | OAuth 임시 상태와 로그인 세션 암호화 키, 32자 이상 |
 | `AUTH_URL` | 아니요 | 런타임 | 앱 공개 기본 URL, 끝 슬래시 제외 |
+| `GOOGLE_TOKEN_ENCRYPTION_KEY` | 예 | 런타임 | Drive refresh token용 32바이트 AES-GCM 키(base64/base64url) |
 
 Next.js/OpenNext 빌드는 이 값을 읽거나 인라인하지 않으므로 **Workers Builds의 Build Variables and Secrets에는 필수값이 없습니다.** 네 값은 배포된 Worker의 **Settings > Variables & Secrets**에 런타임 값으로 설정해야 합니다. Workers Builds 변수는 런타임에 전달되지 않습니다.
 
@@ -48,6 +64,12 @@ Next.js/OpenNext 빌드는 이 값을 읽거나 인라인하지 않으므로 **W
 ```bash
 npx wrangler secret put GOOGLE_CLIENT_SECRET
 npx wrangler secret put AUTH_SECRET
+```
+
+Drive 연결을 활성화하기 전에 별도 암호화 키를 등록합니다. 다음 명령은 32바이트 난수를 터미널에 표시하지 않고 Wrangler 입력으로 전달합니다. `AUTH_SECRET`을 재사용하지 않습니다.
+
+```bash
+openssl rand -base64 32 | npx wrangler secret put GOOGLE_TOKEN_ENCRYPTION_KEY
 ```
 
 `GOOGLE_CLIENT_ID`와 `AUTH_URL`은 Cloudflare Dashboard의 Worker **Settings > Variables & Secrets**에서 일반 텍스트 변수로 등록할 수 있습니다. 운영 정책상 모두 secret으로 관리하려면 다음 명령을 사용해도 됩니다.
@@ -104,20 +126,20 @@ npm run build:cloudflare
 로컬 migration 적용과 확인:
 
 ```bash
-npx wrangler d1 migrations apply interior-workspace --local
-npx wrangler d1 migrations list interior-workspace --local
+npx wrangler d1 migrations apply interior-workspace-db --local
+npx wrangler d1 migrations list interior-workspace-db --local
 ```
 
 개발 seed는 migration과 분리되어 운영에 자동 적용되지 않습니다. 필요한 경우 로컬 DB에만 명시적으로 실행합니다.
 
 ```bash
-npx wrangler d1 execute interior-workspace --local --file=./seeds/development.sql
+npx wrangler d1 execute interior-workspace-db --local --file=./seeds/development.sql
 ```
 
 운영 D1을 생성하고 `database_id`를 설정한 이후 운영 migration은 다음처럼 별도로 적용합니다.
 
 ```bash
-npx wrangler d1 migrations apply interior-workspace --remote
+npx wrangler d1 migrations apply interior-workspace-db --remote
 ```
 
 운영 migration은 적용 전에 Cloudflare D1 백업과 대상 database 확인을 선행합니다.

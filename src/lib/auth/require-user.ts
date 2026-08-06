@@ -20,6 +20,15 @@ export async function requireWorkspace(): Promise<WorkspaceContext> {
   return context;
 }
 
+export async function getWorkspaceContextForSession(): Promise<WorkspaceContext | null> {
+  const sessionUser = await getCurrentUser();
+  if (!sessionUser) return null;
+  const user = await findUserById(sessionUser.id);
+  if (!user?.onboardingCompleted) return null;
+  const context = await findActiveWorkspaceContext(user.id);
+  return context?.workspace.onboardingCompleted ? context : null;
+}
+
 export async function getAuthenticatedDestination(): Promise<"/login" | "/onboarding" | "/dashboard"> {
   const sessionUser = await getCurrentUser();
   if (!sessionUser) return "/login";
