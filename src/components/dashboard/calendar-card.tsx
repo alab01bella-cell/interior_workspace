@@ -1,56 +1,48 @@
 import { CalendarDays } from "lucide-react";
+import type { Consultation } from "@/types/consultation";
 import { Card } from "@/components/ui/card";
 
 const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
-const calendarDays = Array.from({ length: 35 }, (_, index) => index - 2);
-const calendarEvents: Record<number, { time: string; customer: string }[]> = {
-  4: [
-    { time: "10:30", customer: "홍길동" },
-    { time: "14:00", customer: "고길동" },
-  ],
-  8: [{ time: "11:00", customer: "박지현" }],
-  13: [{ time: "15:30", customer: "이서준" }],
-  21: [{ time: "13:00", customer: "김민지" }],
-  27: [{ time: "16:00", customer: "최유진" }],
-};
 
-export function CalendarCard() {
+export function CalendarCard({ consultations, demo }: { consultations: Consultation[]; demo: boolean }) {
+  const reference = demo ? new Date("2026-08-01T00:00:00+09:00") : new Date();
+  const year = reference.getFullYear();
+  const month = reference.getMonth();
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const calendarDays = Array.from({ length: 42 }, (_, index) => index - firstWeekday + 1);
+  const events = consultations.reduce<Record<number, Consultation[]>>((byDay, consultation) => {
+    const [eventYear, eventMonth, eventDay] = consultation.visitDate.split("-").map(Number);
+    if (eventYear === year && eventMonth === month + 1 && eventDay) (byDay[eventDay] ??= []).push(consultation);
+    return byDay;
+  }, {});
+  const eventCount = Object.values(events).reduce((count, dayEvents) => count + dayEvents.length, 0);
+
   return (
     <Card className="calendar-card">
       <div className="calendar-heading">
-        <div className="panel-title">
-          <CalendarDays aria-hidden="true" />
-          <h2>캘린더</h2>
-        </div>
-        <strong>2026. 08</strong>
+        <div className="panel-title"><CalendarDays aria-hidden="true" /><h2>캘린더</h2></div>
+        <strong>{year}. {String(month + 1).padStart(2, "0")}</strong>
       </div>
       <div className="calendar-grid calendar-weekdays" aria-hidden="true">
         {weekDays.map((day) => <span key={day}>{day}</span>)}
       </div>
       <div className="calendar-grid">
         {calendarDays.map((day, index) => {
-          const inMonth = day > 0 && day <= 31;
-          const events = inMonth ? calendarEvents[day] ?? [] : [];
+          const inMonth = day > 0 && day <= daysInMonth;
+          const dayEvents = inMonth ? events[day] ?? [] : [];
+          const displayDay = day <= 0
+            ? new Date(year, month, day).getDate()
+            : day > daysInMonth ? day - daysInMonth : day;
           return (
-            <span
-              className={`${inMonth ? "" : "is-muted"}${day === 4 ? " is-today" : ""}`}
-              key={`${day}-${index}`}
-            >
-              <b>{day <= 0 ? 31 + day : day > 31 ? day - 31 : day}</b>
-              {events.length > 0 && (
-                <em>
-                  {events.slice(0, 2).map((event) => (
-                    <small key={`${event.time}-${event.customer}`}>
-                      {event.time} {event.customer}
-                    </small>
-                  ))}
-                </em>
-              )}
+            <span className={inMonth ? "" : "is-muted"} key={`${day}-${index}`}>
+              <b>{displayDay}</b>
+              {dayEvents.length > 0 && <em>{dayEvents.slice(0, 2).map((event) => <small key={event.id}>{event.visitTime} {event.customerName}</small>)}</em>}
             </span>
           );
         })}
       </div>
-      <div className="calendar-legend"><span /> 오늘 상담 2건</div>
+      <div className="calendar-legend"><span /> {eventCount ? `상담 일정 ${eventCount}건` : "일정 없음"}</div>
     </Card>
   );
 }

@@ -10,5 +10,5 @@ export default async function ConsultationsRoute({ searchParams }: { searchParam
   const context = await requireWorkspace();
   const { status } = await searchParams;
   const initialStatus = statuses.includes(status as ConsultationStatus) ? status as ConsultationStatus : "전체";
-  return <AppShell identity={toWorkspaceIdentity(context)}><ConsultationsPage initialStatus={initialStatus} /></AppShell>;
+  return <AppShell identity={toWorkspaceIdentity(context)}><ConsultationsPage consultations={[]} initialStatus={initialStatus} /></AppShell>;
 }

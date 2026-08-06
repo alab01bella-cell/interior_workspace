@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { ListChecks } from "lucide-react";
-import { todoItems as initialTodoItems } from "@/lib/mock/dashboard-data";
 import { Card } from "@/components/ui/card";
+import type { TodoItem } from "@/types/dashboard";
 
-export function TodoCard() {
-  const [items, setItems] = useState(initialTodoItems);
+export function TodoCard({ initialItems }: { initialItems: TodoItem[] }) {
+  const [items, setItems] = useState(initialItems);
 
   const toggleItem = (id: string) => {
     setItems((currentItems) =>
@@ -33,6 +33,7 @@ export function TodoCard() {
             <span>{item.label}</span>
           </label>
         ))}
+        {items.length === 0 && <p className="dashboard-empty">등록된 할 일이 없습니다.</p>}
       </div>
       <button className="text-link" type="button">전체보기 <span>›</span></button>
     </Card>

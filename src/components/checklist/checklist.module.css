@@ -75,6 +75,7 @@
 .review dt { color: var(--check-muted); font-size: 10px; }
 .review dd { margin: 3px 0 0; overflow-wrap: anywhere; font-size: 13px; font-weight: 650; }
 .error { margin: 14px 0 0; padding: 13px 15px; color: #a53b31; background: #fff0ee; border: 1px solid #ffd3ce; border-radius: 12px; font-size: 13px; }
+.demoNotice { margin: auto 0 14px; padding: 11px 12px; color: #8a4b00; background: #fff3e2; border: 1px solid #ffd8aa; border-radius: 10px; font-size: 12px; font-weight: 700; line-height: 1.5; }
 .navigation { position: sticky; bottom: 12px; z-index: 9; display: flex; justify-content: space-between; gap: 12px; margin-top: 14px; padding: 12px; background: rgba(242,243,245,.86); border: 1px solid rgba(255,255,255,.85); border-radius: 17px; box-shadow: 0 10px 30px rgba(15,23,42,.09); backdrop-filter: blur(18px); }
 .navigation button { display: inline-flex; min-width: 112px; min-height: 48px; align-items: center; justify-content: center; gap: 8px; padding: 0 20px; border-radius: 12px; font-size: 14px; font-weight: 750; cursor: pointer; }
 .navigation button svg { width: 17px; }

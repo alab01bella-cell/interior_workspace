@@ -3,8 +3,8 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { checklistSteps, formatBudget, formatPhone, getLocalToday, initialChecklistState, spaceDetailGroups } from "@/lib/checklist/checklist-data";
-import { createChecklistSubmission, mapSubmissionToConsultation } from "@/lib/consultations/consultation-mapper";
-import { localStorageConsultationRepository } from "@/lib/consultations/local-storage-consultation-repository";
+import { createChecklistSubmission, mapSubmissionToConsultation } from "@/lib/demo/demo-consultation-mapper";
+import { demoLocalStorageConsultationRepository } from "@/lib/demo/demo-local-storage-consultation-repository";
 import type { ChecklistFormData } from "@/types/checklist";
 import { ChecklistIntro } from "./checklist-intro";
 import { ChecklistNavigation } from "./checklist-navigation";
@@ -104,7 +104,7 @@ export function ChecklistPage() {
     setIsSubmitting(true);
     try {
       const submission = createChecklistSubmission(form);
-      localStorageConsultationRepository.save(mapSubmissionToConsultation(submission));
+      demoLocalStorageConsultationRepository.save(mapSubmissionToConsultation(submission));
       setIsComplete(true);
       scrollTop();
     } catch {
@@ -124,7 +124,7 @@ export function ChecklistPage() {
     scrollTop();
   };
 
-  if (isComplete) return <main className={styles.publicPage}><SuccessScreen onList={() => router.push("/consultations")} onReset={reset} /></main>;
+  if (isComplete) return <main className={styles.publicPage}><SuccessScreen onList={() => router.push("/demo")} onReset={reset} /></main>;
 
   return (
     <main className={styles.publicPage}>

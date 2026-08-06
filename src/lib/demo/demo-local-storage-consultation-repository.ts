@@ -1,7 +1,7 @@
-import type { ConsultationRepository } from "./consultation-repository";
+import type { ConsultationRepository } from "./demo-consultation-repository";
 import type { ConsultationStatus, StoredConsultation, StoredConsultationsDocument } from "@/types/consultation";
 
-export const CONSULTATIONS_STORAGE_KEY = "interior-workspace:consultations:v1";
+export const DEMO_CONSULTATIONS_STORAGE_KEY = "interior-demo:consultations";
 
 const emptyDocument = (): StoredConsultationsDocument => ({ version: 1, consultations: [] });
 
@@ -32,7 +32,7 @@ export class LocalStorageConsultationRepository implements ConsultationRepositor
   private read(): StoredConsultationsDocument {
     if (typeof window === "undefined") return emptyDocument();
     try {
-      const raw = window.localStorage.getItem(CONSULTATIONS_STORAGE_KEY);
+      const raw = window.localStorage.getItem(DEMO_CONSULTATIONS_STORAGE_KEY);
       if (!raw) return emptyDocument();
       const parsed = JSON.parse(raw) as Partial<StoredConsultationsDocument>;
       if (parsed.version !== 1 || !Array.isArray(parsed.consultations)) return emptyDocument();
@@ -48,7 +48,7 @@ export class LocalStorageConsultationRepository implements ConsultationRepositor
 
   private write(document: StoredConsultationsDocument) {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(CONSULTATIONS_STORAGE_KEY, JSON.stringify(document));
+    window.localStorage.setItem(DEMO_CONSULTATIONS_STORAGE_KEY, JSON.stringify(document));
   }
 
   list() {
@@ -78,4 +78,4 @@ export class LocalStorageConsultationRepository implements ConsultationRepositor
   }
 }
 
-export const localStorageConsultationRepository = new LocalStorageConsultationRepository();
+export const demoLocalStorageConsultationRepository = new LocalStorageConsultationRepository();

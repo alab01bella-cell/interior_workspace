@@ -1,25 +1,11 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import { CalendarClock, CircleCheckBig, FilePenLine, Handshake } from "lucide-react";
-import {
-  getAllConsultations,
-  getConsultationStatusCounts,
-  getRecentConsultations,
-  getTodayConsultations,
-  type ConsultationStatusCounts,
-} from "@/lib/consultations/consultation-selectors";
-import type { Consultation } from "@/types/consultation";
+import type { Consultation, ConsultationStatus } from "@/types/consultation";
+import type { TodoItem } from "@/types/dashboard";
 import { CalendarCard } from "./calendar-card";
 import { RecentConsultationsCard } from "./recent-consultations-card";
 import { ScheduleCard } from "./schedule-card";
 import { StatCard } from "./stat-card";
-
-interface DashboardData {
-  counts: ConsultationStatusCounts;
-  today: Consultation[];
-  recent: Consultation[];
-}
+import { TodoCard } from "./todo-card";
 
 const statMeta = [
   { label: "접수" as const, icon: FilePenLine, featured: true },
@@ -28,32 +14,44 @@ const statMeta = [
   { label: "계약" as const, icon: Handshake },
 ];
 
-export function DashboardDataSection() {
-  const [data, setData] = useState<DashboardData | null>(null);
+function statusCounts(consultations: Consultation[]): Record<ConsultationStatus, number> {
+  return consultations.reduce<Record<ConsultationStatus, number>>((counts, consultation) => {
+    counts[consultation.status] += 1;
+    return counts;
+  }, { 접수: 0, 예약: 0, 완료: 0, 계약: 0 });
+}
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const consultations = getAllConsultations();
-      setData({
-        counts: getConsultationStatusCounts(consultations),
-        today: getTodayConsultations(consultations),
-        recent: getRecentConsultations(consultations),
-      });
-    });
-    return () => window.clearTimeout(timer);
-  }, []);
+export function DashboardDataSection({
+  consultations,
+  todos,
+  demo = false,
+}: {
+  consultations: Consultation[];
+  todos: TodoItem[];
+  demo?: boolean;
+}) {
+  const counts = statusCounts(consultations);
+  const recent = [...consultations]
+    .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
+    .slice(0, 5);
+  const today = demo
+    ? consultations.filter((consultation) => consultation.visitDate === "2026-08-04")
+    : [];
 
   return (
     <>
       <section className="stats-grid" aria-label="상담 현황">
-        {statMeta.map((stat) => <StatCard {...stat} count={data?.counts[stat.label] ?? null} key={stat.label} />)}
+        {statMeta.map((stat) => <StatCard {...stat} count={counts[stat.label]} demo={demo} key={stat.label} />)}
       </section>
       <section className="dashboard-grid">
         <div className="dashboard-column">
-          <ScheduleCard consultations={data?.today ?? null} />
-          <RecentConsultationsCard consultations={data?.recent ?? null} />
+          <ScheduleCard consultations={today} detailLinksEnabled={!demo} />
+          <RecentConsultationsCard consultations={recent} detailLinksEnabled={!demo} />
         </div>
-        <CalendarCard />
+        <div className="dashboard-column">
+          <CalendarCard consultations={consultations} demo={demo} />
+          <TodoCard initialItems={todos} />
+        </div>
       </section>
     </>
   );

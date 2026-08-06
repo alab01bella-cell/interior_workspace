@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ExternalLink, Search, SlidersHorizontal } from "lucide-react";
-import { localStorageConsultationRepository } from "@/lib/consultations/local-storage-consultation-repository";
-import { initialConsultations } from "@/lib/mock/consultations-data";
-import type { ConsultationStatus } from "@/types/consultation";
+import type { Consultation, ConsultationStatus } from "@/types/consultation";
 import { StatusBadge } from "./status-badge";
 
 const statusFilters: ("전체" | ConsultationStatus)[] = ["전체", "접수", "예약", "완료", "계약"];
@@ -15,20 +13,11 @@ const formatDate = (value: string) => new Intl.DateTimeFormat("ko-KR", {
   year: "2-digit", month: "2-digit", day: "2-digit",
 }).format(new Date(value));
 
-export function ConsultationsPage({ initialStatus = "전체" }: { initialStatus?: "전체" | ConsultationStatus }) {
+export function ConsultationsPage({ consultations: initialConsultations, initialStatus = "전체" }: { consultations: Consultation[]; initialStatus?: "전체" | ConsultationStatus }) {
   const [consultations, setConsultations] = useState(initialConsultations);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"전체" | ConsultationStatus>(initialStatus);
   const [page, setPage] = useState(1);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const stored = localStorageConsultationRepository.list()
-        .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
-      setConsultations([...stored, ...initialConsultations]);
-    });
-    return () => window.clearTimeout(timer);
-  }, []);
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -52,8 +41,6 @@ export function ConsultationsPage({ initialStatus = "전체" }: { initialStatus?
 
   const changeStatus = (id: string, status: ConsultationStatus) => {
     setConsultations((items) => items.map((item) => item.id === id ? { ...item, status } : item));
-    const consultation = consultations.find((item) => item.id === id);
-    if (consultation?.source === "stored") localStorageConsultationRepository.updateStatus(id, status);
   };
 
   return (
@@ -62,7 +49,6 @@ export function ConsultationsPage({ initialStatus = "전체" }: { initialStatus?
         <div><p>CONSULTATIONS</p><h1>상담목록</h1><span>고객 상담 접수 내역을 한눈에 확인하고 관리하세요.</span></div>
         <strong>총 {filtered.length}건</strong>
       </header>
-
       <section className="consultation-toolbar">
         <label className="consultation-search"><Search /><input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="고객 이름 또는 지역 검색" /></label>
         <div className="status-filters" aria-label="상태 필터">
@@ -97,7 +83,7 @@ export function ConsultationsPage({ initialStatus = "전체" }: { initialStatus?
           ))}
         </div>
 
-        {pageItems.length === 0 && <div className="consultations-empty">검색 조건에 맞는 상담이 없습니다.</div>}
+        {pageItems.length === 0 && <div className="consultations-empty">아직 접수된 상담이 없습니다.</div>}
         <footer className="pagination"><span>{(currentPage - 1) * pageSize + (pageItems.length ? 1 : 0)}–{(currentPage - 1) * pageSize + pageItems.length} / {filtered.length}</span><div><button disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))} aria-label="이전 페이지" type="button"><ChevronLeft /></button>{Array.from({ length: totalPages }, (_, index) => index + 1).map((value) => <button className={currentPage === value ? "is-active" : ""} key={value} onClick={() => setPage(value)} type="button">{value}</button>)}<button disabled={currentPage === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))} aria-label="다음 페이지" type="button"><ChevronRight /></button></div></footer>
       </section>
     </div>
