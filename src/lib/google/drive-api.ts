@@ -4,6 +4,7 @@ const DRIVE_API = "https://www.googleapis.com/drive/v3";
 async function driveFetch(accessToken: string, path: string, init?: RequestInit): Promise<Response> {
   return fetch(`${DRIVE_API}${path}`, {
     ...init,
+    signal: init?.signal ?? AbortSignal.timeout(30_000),
     headers: {
       authorization: `Bearer ${accessToken}`,
       ...(init?.body ? { "content-type": "application/json" } : {}),

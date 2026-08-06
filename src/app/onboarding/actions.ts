@@ -28,5 +28,5 @@ export async function submitOnboarding(formData: FormData) {
   } catch {
     redirect("/onboarding?error=save_failed");
   }
-  redirect("/dashboard");
+  redirect("/settings/integrations?setup=storage");
 }

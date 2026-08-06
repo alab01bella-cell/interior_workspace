@@ -1,11 +1,12 @@
 import { ExternalLink, HardDrive, LockKeyhole } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
+import { DriveConnectButton } from "@/components/integrations/drive-connect-button";
 import { requireWorkspace } from "@/lib/auth/require-user";
 import { findPublicDriveConnection } from "@/lib/google/drive-connection-repository";
 import { toWorkspaceIdentity } from "@/lib/workspaces/workspace-repository";
 
 interface PageProps {
-  searchParams: Promise<{ result?: string; error?: string; warning?: string }>;
+  searchParams: Promise<{ result?: string; error?: string; warning?: string; setup?: string }>;
 }
 
 function formatConnectedAt(value: string): string {
@@ -28,8 +29,8 @@ export default async function IntegrationsPage({ searchParams }: PageProps) {
       <section className="integrations-page">
         <header className="integrations-heading">
           <p className="eyebrow">WORKSPACE SETTINGS</p>
-          <h1>연동 관리</h1>
-          <span>업체 Workspace에서 사용하는 외부 서비스를 관리합니다.</span>
+          <h1>{params.setup === "storage" ? "저장공간 설정" : "연동 관리"}</h1>
+          <span>{params.setup === "storage" ? "Workspace가 준비되었습니다. 상담 자료를 저장할 공간을 선택해주세요." : "업체 Workspace에서 사용하는 외부 서비스를 관리합니다."}</span>
         </header>
 
         {params.result === "connected" && <p className="integration-alert is-success">Google Drive 연결을 완료했습니다.</p>}
@@ -57,24 +58,39 @@ export default async function IntegrationsPage({ searchParams }: PageProps) {
                 <div><dt>루트 폴더</dt><dd>{connection.driveRootFolderId ? "생성 완료" : "생성되지 않음"}</dd></div>
               </dl>
             ) : (
-              <p className="integration-description">상담 자료를 업체 Google Drive에 저장하려면 연결이 필요합니다. 앱이 만든 파일에만 접근하는 제한된 권한을 요청합니다.</p>
+              <>
+                <p className="integration-description integration-guidance">상담 자료를 저장할 업체용 Google 계정을 연결해주세요.<br />개인 직원 계정보다는 회사에서 지속적으로 관리할 계정 사용을 권장합니다.</p>
+                <p className="integration-scope-note">로그인한 Google 계정과 다른 계정을 연결할 수 있으며, 앱이 만든 파일에만 접근하는 제한된 권한을 요청합니다.</p>
+                <div className="integration-unavailable" role="note">
+                  <strong>Drive 연결 전 준비되지 않은 기능</strong>
+                  <ul>
+                    <li>실제 상담 접수 저장</li>
+                    <li>파일 업로드</li>
+                    <li>상담 자료 Drive 저장</li>
+                  </ul>
+                </div>
+              </>
             )}
 
             <div className="integration-actions">
-              {isConnected && connection?.driveRootFolderId && (
+              {isOwner && isConnected && connection?.driveRootFolderId && (
                 <a className="integration-button is-secondary" href={`https://drive.google.com/drive/folders/${encodeURIComponent(connection.driveRootFolderId)}`} target="_blank" rel="noreferrer">
                   Drive 폴더 열기 <ExternalLink aria-hidden="true" />
                 </a>
               )}
               {isOwner ? isConnected ? (
-                <form action="/api/google/drive/disconnect" method="post">
-                  <button className="integration-button is-danger" type="submit">연결 해제</button>
-                </form>
+                <>
+                  <DriveConnectButton label="연결 계정 변경" className="integration-button is-secondary" />
+                  <form action="/api/google/drive/disconnect" method="post">
+                    <button className="integration-button is-danger" type="submit">연결 해제</button>
+                  </form>
+                </>
               ) : (
-                <a className="integration-button" href="/api/google/drive/connect">Google Drive 연결하기</a>
+                <DriveConnectButton />
               ) : (
-                <p className="integration-permission"><LockKeyhole aria-hidden="true" />대표 또는 관리자에게 문의하세요. 현재 연결·해제는 OWNER만 가능합니다.</p>
+                <p className="integration-permission"><LockKeyhole aria-hidden="true" />연결 상태는 확인할 수 있지만, 연결·해제·변경은 Workspace OWNER만 가능합니다.</p>
               )}
+              {params.setup === "storage" && <a className="integration-text-link" href="/dashboard">나중에 연결하기</a>}
             </div>
           </div>
         </article>

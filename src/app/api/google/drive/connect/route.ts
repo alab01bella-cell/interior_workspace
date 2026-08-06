@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getAuthConfig } from "@/lib/auth/config";
 import { getWorkspaceContextForSession } from "@/lib/auth/require-user";
-import { OAUTH_MAX_AGE, seal, setDriveOAuthCookie } from "@/lib/auth/session";
+import { DRIVE_OAUTH_COOKIE, OAUTH_MAX_AGE, seal, setDriveOAuthCookie, unseal } from "@/lib/auth/session";
 import { DRIVE_FILE_SCOPE } from "@/lib/google/drive-api";
 
 export const runtime = "nodejs";
@@ -17,7 +17,38 @@ function base64Url(bytes: Uint8Array): string {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-export async function GET() {
+interface DriveOAuthTransaction {
+  state: string;
+  codeVerifier: string;
+  workspaceId: string;
+  userId: string;
+}
+
+function authorizationUrl(config: ReturnType<typeof getAuthConfig>, transaction: DriveOAuthTransaction) {
+  const redirectUri = `${config.baseUrl}/api/google/drive/callback`;
+  const challengePromise = crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(transaction.codeVerifier),
+  ).then((digest) => base64Url(new Uint8Array(digest)));
+  return challengePromise.then((challenge) => {
+    const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    url.search = new URLSearchParams({
+      client_id: config.clientId,
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope: DRIVE_FILE_SCOPE,
+      access_type: "offline",
+      prompt: "select_account consent",
+      include_granted_scopes: "true",
+      state: transaction.state,
+      code_challenge: challenge,
+      code_challenge_method: "S256",
+    }).toString();
+    return url;
+  });
+}
+
+export async function GET(request: NextRequest) {
   let baseUrl = process.env.AUTH_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
   try {
     const config = getAuthConfig();
@@ -28,34 +59,19 @@ export async function GET() {
       return NextResponse.redirect(`${baseUrl}/settings/integrations?error=owner_required`);
     }
 
-    const state = randomValue();
-    const codeVerifier = randomValue(48);
-    const challenge = base64Url(new Uint8Array(await crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(codeVerifier),
-    )));
-    const redirectUri = `${config.baseUrl}/api/google/drive/callback`;
-    const authorizationUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-    authorizationUrl.search = new URLSearchParams({
-      client_id: config.clientId,
-      redirect_uri: redirectUri,
-      response_type: "code",
-      scope: DRIVE_FILE_SCOPE,
-      access_type: "offline",
-      prompt: "consent",
-      include_granted_scopes: "true",
-      state,
-      code_challenge: challenge,
-      code_challenge_method: "S256",
-    }).toString();
+    const existingToken = request.cookies.get(DRIVE_OAUTH_COOKIE)?.value;
+    const existing = existingToken ? await unseal<DriveOAuthTransaction>(existingToken) : null;
+    const transaction = existing?.workspaceId === context.workspace.id && existing.userId === context.user.id
+      ? existing
+      : {
+          state: randomValue(),
+          codeVerifier: randomValue(48),
+          workspaceId: context.workspace.id,
+          userId: context.user.id,
+        };
 
-    const response = NextResponse.redirect(authorizationUrl);
-    setDriveOAuthCookie(response, await seal({
-      state,
-      codeVerifier,
-      workspaceId: context.workspace.id,
-      userId: context.user.id,
-    }, OAUTH_MAX_AGE));
+    const response = NextResponse.redirect(await authorizationUrl(config, transaction));
+    setDriveOAuthCookie(response, await seal(transaction, OAUTH_MAX_AGE));
     return response;
   } catch {
     return NextResponse.redirect(`${baseUrl}/settings/integrations?error=configuration`);

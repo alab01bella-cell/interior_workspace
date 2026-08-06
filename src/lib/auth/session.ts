@@ -6,6 +6,7 @@ import { getAuthConfig } from "./config";
 export const SESSION_COOKIE = "__Host-interior_session";
 export const OAUTH_COOKIE = "__Host-interior_oauth";
 export const DRIVE_OAUTH_COOKIE = "__Host-interior_drive_oauth";
+export const DRIVE_PROCESS_COOKIE = "__Host-interior_drive_process";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 export const OAUTH_MAX_AGE = 60 * 10;
 
@@ -96,4 +97,12 @@ export function setDriveOAuthCookie(response: NextResponse, value: string) {
 
 export function clearDriveOAuthCookie(response: NextResponse) {
   response.cookies.set(DRIVE_OAUTH_COOKIE, "", cookieOptions(0));
+}
+
+export function setDriveProcessCookie(response: NextResponse, value: string) {
+  response.cookies.set(DRIVE_PROCESS_COOKIE, value, cookieOptions(OAUTH_MAX_AGE));
+}
+
+export function clearDriveProcessCookie(response: NextResponse) {
+  response.cookies.set(DRIVE_PROCESS_COOKIE, "", cookieOptions(0));
 }
