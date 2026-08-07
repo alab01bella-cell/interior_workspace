@@ -5,6 +5,9 @@ import { findAppResource, createAppResource } from "./drive-api";
 import { getGoogleAccessToken } from "./google-access-token";
 import { appendRows, hasConsultationRow, initializeConsultationSpreadsheet, updateStatusCell } from "./sheets-api";
 import { getDb } from "@/lib/db/client";
+import { createChecklistPdf } from "@/lib/pdf/checklist-pdf";
+import { findChecklistOriginal, saveConsultationFile } from "@/lib/consultations/consultation-file-repository";
+import { uploadDriveFile } from "./drive-api";
 
 const FOLDER="application/vnd.google-apps.folder", SPREADSHEET="application/vnd.google-apps.spreadsheet";
 export const summaryHeaders=["상담ID","접수일","고객명","지역","평수","예산","상담 가능일","연락 방법","연락처","상태"];
@@ -26,6 +29,12 @@ export async function syncConsultation(record:ConsultationRecord,workspaceName:s
   let driveOk=Boolean(record.driveFolderId),sheetOk=Boolean(record.sheetSyncedAt);try{
     const connection=await findDriveConnection(record.workspaceId);if(!connection?.driveRootFolderId)throw new Error("google_connection_unavailable");const token=await getGoogleAccessToken(connection);const resources=await resourceIds(record.workspaceId,workspaceName,token,connection.driveRootFolderId);
     let folderId=record.driveFolderId;if(!folderId)folderId=await findAppResource(token,resources.parent,"consultation_id",record.id,FOLDER);if(!folderId)folderId=await createAppResource(token,`${safeName(record.clientName)}_${safeName(record.region)}_${record.id.slice(0,4)}`,resources.parent,FOLDER,"consultation_id",record.id);driveOk=true;await updateSync(record.id,{driveFolderId:folderId,status:"PARTIAL"});
+    if(!await findChecklistOriginal(record.id)){
+      const fileName=`상담 체크리스트_원본_${record.id.slice(0,4)}.pdf`;
+      let pdfId=await findAppResource(token,folderId,"consultation_original_pdf",record.id,"application/pdf");let size=0;
+      if(!pdfId){const bytes=await createChecklistPdf(record,workspaceName);const uploaded=await uploadDriveFile(token,{name:fileName,parentId:folderId,mimeType:"application/pdf",bytes,appProperties:{consultation_original_pdf:record.id}});pdfId=uploaded.id;size=uploaded.size;}
+      await saveConsultationFile({workspaceId:record.workspaceId,consultationId:record.id,driveFileId:pdfId,driveFolderId:folderId,fileCategory:"CHECKLIST_ORIGINAL",originalFileName:fileName,mimeType:"application/pdf",fileSize:size});
+    }
     if(!await hasConsultationRow(token,resources.spreadsheet,"상담 접수대장",record.id))await appendRows(token,resources.spreadsheet,"상담 접수대장",[[record.id,record.submittedAt,record.clientName,record.region,record.area,record.budgetAmount,record.preferredDate,record.contactMethod,record.contactValue,STATUS_FROM_DB[record.status]]]);
     if(!await hasConsultationRow(token,resources.spreadsheet,"체크리스트 원본",record.id))await appendRows(token,resources.spreadsheet,"체크리스트 원본",[[record.id,record.submittedAt,record.formVersion,...checklistFields.map((f)=>cell(record.answers[f.name])),JSON.stringify(record.answers)]]);sheetOk=true;await updateSync(record.id,{driveFolderId:folderId,status:"SYNCED",sheetSynced:true});
   }catch(error){const code=error instanceof Error?error.message:"google_sync_failed";await updateSync(record.id,{status:code==="google_permission_required"?"PERMISSION_REQUIRED":driveOk||sheetOk?"PARTIAL":"FAILED",error:code});}

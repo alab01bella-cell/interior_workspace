@@ -1,5 +1,6 @@
 export const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
+const DRIVE_UPLOAD_API = "https://www.googleapis.com/upload/drive/v3";
 
 async function driveFetch(accessToken: string, path: string, init?: RequestInit): Promise<Response> {
   return fetch(`${DRIVE_API}${path}`, {
@@ -58,6 +59,27 @@ export async function findAppResource(accessToken:string,parentId:string,key:str
 export async function createAppResource(accessToken:string,name:string,parentId:string,mimeType:string,key:string,value:string):Promise<string>{
   const response=await driveFetch(accessToken,"/files?fields=id",{method:"POST",body:JSON.stringify({name,mimeType,parents:[parentId],appProperties:{[key]:value}})});
   if(!response.ok)throw new Error("drive_resource_create_failed");const file=await response.json() as {id?:string};if(!file.id)throw new Error("drive_resource_create_failed");return file.id;
+}
+
+export async function uploadDriveFile(accessToken:string,input:{name:string;parentId:string;mimeType:string;bytes:ArrayBuffer|Uint8Array;appProperties?:Record<string,string>}):Promise<{id:string;size:number}> {
+  const boundary=`iw_${crypto.randomUUID().replace(/-/g,"")}`;
+  const encoder=new TextEncoder();
+  const metadata=JSON.stringify({name:input.name,parents:[input.parentId],appProperties:input.appProperties});
+  const payload=input.bytes instanceof ArrayBuffer?input.bytes:new Uint8Array(input.bytes).buffer;
+  const body=new Blob([
+    encoder.encode(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n--${boundary}\r\nContent-Type: ${input.mimeType}\r\n\r\n`),
+    payload,
+    encoder.encode(`\r\n--${boundary}--`),
+  ]);
+  const response=await fetch(`${DRIVE_UPLOAD_API}/files?uploadType=multipart&fields=id,size`,{method:"POST",headers:{authorization:`Bearer ${accessToken}`,"content-type":`multipart/related; boundary=${boundary}`},body,cache:"no-store",signal:AbortSignal.timeout(60_000)});
+  if(!response.ok)throw new Error(response.status===403?"google_permission_required":"drive_file_upload_failed");
+  const file=await response.json() as {id?:string;size?:string};if(!file.id)throw new Error("drive_file_upload_failed");return {id:file.id,size:Number(file.size??body.size)};
+}
+
+export async function getDriveFileLink(accessToken:string,fileId:string):Promise<{webViewLink:string;name:string}|null>{
+  const response=await driveFetch(accessToken,`/files/${encodeURIComponent(fileId)}?fields=id,name,trashed,webViewLink`);
+  if(response.status===404)return null;if(!response.ok)throw new Error("drive_file_check_failed");
+  const file=await response.json() as {name?:string;trashed?:boolean;webViewLink?:string};if(file.trashed||!file.webViewLink)return null;return {webViewLink:file.webViewLink,name:file.name??""};
 }
 
 export async function createSpreadsheetFile(accessToken:string,name:string,parentId:string):Promise<string> {

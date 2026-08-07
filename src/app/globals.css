@@ -543,6 +543,18 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .progress-hero-icon.is-loading svg, .step-spinner, .button-spinner { animation-duration: 2.4s; }
 }
 
+.file-panel button,.file-panel a { border: 1px solid var(--line); border-radius: 8px; padding: 8px 11px; background: #fff; color: inherit; font: inherit; text-decoration: none; cursor: pointer; }
+.file-upload-status { color: var(--muted); font-size: 13px; }
+.file-missing-notice { padding: 11px 14px; border: 1px solid #eadfce; border-radius: 9px; background: #fffaf3; color: #695e50; }
+.file-folder-list { display: grid; gap: 10px; }
+.file-folder-row { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.file-folder-row > div { display: flex; align-items: center; gap: 9px; }
+.file-folder-row span { color: var(--muted); font-size: 13px; }
+.document-list { margin-top: 24px; }
+.document-list > a { display: block; width: fit-content; margin: 8px 0; border: 0; padding: 0; text-decoration: underline; }
+.document-list > div { display: flex; gap: 8px; margin-top: 12px; }
+@media (max-width: 600px) { .file-folder-row { align-items: flex-start; flex-direction: column; } }
+
 @media (max-width: 420px) {
   .login-page { padding: 0; }
   .login-card { min-height: 100vh; padding: 34px 24px; border-radius: 0; }
