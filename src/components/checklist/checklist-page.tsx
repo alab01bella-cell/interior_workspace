@@ -13,7 +13,9 @@ import { StepCard } from "./step-card";
 import { SuccessScreen } from "./success-screen";
 import styles from "./checklist.module.css";
 
-export function ChecklistPage({ publicKey, workspaceName }: { publicKey?: string; workspaceName?: string }) {
+type ChecklistMode = "demo" | "production";
+
+export function ChecklistPage({ mode, submissionPath, workspaceName }: { mode: ChecklistMode; submissionPath?: string; workspaceName?: string }) {
   const router = useRouter();
   const [form, setForm] = useState<ChecklistFormData>(() => ({ ...initialChecklistState }));
   const [currentStep, setCurrentStep] = useState(0);
@@ -103,12 +105,12 @@ export function ChecklistPage({ publicKey, workspaceName }: { publicKey?: string
     submissionInProgress.current = true;
     setIsSubmitting(true);
     try {
-      if (publicKey) {
+      if (mode === "production" && submissionPath) {
         const answers = Object.fromEntries(Object.entries(form).filter(([key]) => key !== "sitePhotos" && key !== "referenceImages"));
-        const storageKey = `iw-submission-${publicKey}`;
+        const storageKey = `iw-submission-${submissionPath}`;
         let idempotencyKey = sessionStorage.getItem(storageKey);
         if (!idempotencyKey) { idempotencyKey = crypto.randomUUID(); sessionStorage.setItem(storageKey, idempotencyKey); }
-        const response = await fetch(`/api/public/consultations/${encodeURIComponent(publicKey)}`, { method: "POST", headers: { "content-type": "application/json", "idempotency-key": idempotencyKey }, body: JSON.stringify({ idempotencyKey, answers }) });
+        const response = await fetch(submissionPath, { method: "POST", headers: { "content-type": "application/json", "idempotency-key": idempotencyKey }, body: JSON.stringify({ idempotencyKey, answers }) });
         if (!response.ok) throw new Error("submission_failed");
         sessionStorage.removeItem(storageKey);
       } else {
@@ -119,7 +121,7 @@ export function ChecklistPage({ publicKey, workspaceName }: { publicKey?: string
       scrollTop();
     } catch {
       submissionInProgress.current = false;
-      setError(publicKey ? "상담 접수를 완료하지 못했습니다. 입력 내용을 확인한 뒤 다시 시도해주세요." : "상담 내용을 브라우저에 저장하지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해주세요.");
+      setError(mode === "production" ? "상담 접수를 완료하지 못했습니다. 입력 내용을 확인한 뒤 다시 시도해주세요." : "상담 내용을 브라우저에 저장하지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해주세요.");
     } finally {
       setIsSubmitting(false);
     }
@@ -134,13 +136,12 @@ export function ChecklistPage({ publicKey, workspaceName }: { publicKey?: string
     scrollTop();
   };
 
-  if (isComplete) return <main className={styles.publicPage}><SuccessScreen onList={() => router.push("/demo")} onReset={reset} production={Boolean(publicKey)} /></main>;
+  if (isComplete) return <main className={styles.publicPage}><SuccessScreen onList={() => router.push("/demo")} onReset={reset} production={mode === "production"} /></main>;
 
   return (
     <main className={styles.publicPage}>
       <div className={styles.shell}>
-        <ChecklistIntro />
-        {workspaceName && <p className={styles.workspaceName}>{workspaceName} 고객 상담</p>}
+        <ChecklistIntro mode={mode} workspaceName={workspaceName} />
         <div className={styles.formColumn}>
           <ProgressHeader currentStep={currentStep} />
           <form onSubmit={(event) => { event.preventDefault(); if (currentStep === checklistSteps.length - 1) void submit(); }}>

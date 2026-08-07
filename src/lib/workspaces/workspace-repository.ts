@@ -115,6 +115,29 @@ function publicKey(): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function shortCode(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(9));
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export async function ensureConsultationShortCode(workspaceId: string): Promise<string> {
+  const db = await getDb();
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const code = shortCode();
+    try {
+      await db.prepare(`UPDATE workspaces SET consultation_short_code=COALESCE(consultation_short_code, ?), updated_at=datetime('now') WHERE id=? AND status='ACTIVE'`).bind(code, workspaceId).run();
+      const row = await db.prepare(`SELECT consultation_short_code FROM workspaces WHERE id=? AND status='ACTIVE'`).bind(workspaceId).first<{ consultation_short_code:string|null }>();
+      if (row?.consultation_short_code) return row.consultation_short_code;
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("consultation_short_code")) continue;
+      throw error;
+    }
+  }
+  throw new Error("short_code_unavailable");
+}
+
 export async function ensureConsultationPublicKey(workspaceId: string): Promise<string> {
   const db = await getDb();
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -134,6 +157,11 @@ export async function ensureConsultationPublicKey(workspaceId: string): Promise<
 export async function findWorkspaceByPublicKey(key:string): Promise<{id:string;name:string}|null> {
   if (!/^[a-f0-9]{48}$/.test(key)) return null;
   return (await getDb()).prepare(`SELECT id,name FROM workspaces WHERE consultation_public_key=? AND status='ACTIVE' AND onboarding_completed=1 LIMIT 1`).bind(key).first<{id:string;name:string}>();
+}
+
+export async function findWorkspaceByShortCode(code:string): Promise<{id:string;name:string}|null> {
+  if (!/^[A-Za-z0-9_-]{12}$/.test(code)) return null;
+  return (await getDb()).prepare(`SELECT id,name FROM workspaces WHERE consultation_short_code=? AND status='ACTIVE' AND onboarding_completed=1 LIMIT 1`).bind(code).first<{id:string;name:string}>();
 }
 
 function slugBase(name: string): string {

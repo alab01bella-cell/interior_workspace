@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function ConsultationChecklistDemoPage() {
-  return <ChecklistPage />;
+  return <ChecklistPage mode="demo" />;
 }
