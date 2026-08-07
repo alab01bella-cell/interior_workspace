@@ -39,8 +39,11 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
     setPage(1);
   };
 
-  const changeStatus = (id: string, status: ConsultationStatus) => {
+  const changeStatus = async (id: string, status: ConsultationStatus) => {
+    const previous=consultations.find((item)=>item.id===id)?.status;
     setConsultations((items) => items.map((item) => item.id === id ? { ...item, status } : item));
+    const response=await fetch(`/api/consultations/${encodeURIComponent(id)}/status`,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({status})});
+    if(!response.ok&&previous)setConsultations((items)=>items.map((item)=>item.id===id?{...item,status:previous}:item));
   };
 
   return (
@@ -66,7 +69,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
                 <tr key={item.id}>
                   <td><StatusBadge status={item.status} /></td><td><strong>{item.customerName}</strong></td><td>{item.region}</td><td>{item.areaSize}</td><td>{item.visitDate}<small>{item.visitTime}</small></td><td>{item.budget.toLocaleString()}만원</td><td>{formatDate(item.receivedAt)}</td>
                   <td><Link className="original-button" href={`/consultations/${encodeURIComponent(item.id)}`}>원본 보기 <ExternalLink /></Link></td>
-                  <td><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></td>
+                  <td><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => void changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></td>
                 </tr>
               ))}
             </tbody>
@@ -78,7 +81,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
             <article className="consultation-mobile-card" key={item.id}>
               <header><div><StatusBadge status={item.status} /><h2>{item.customerName} 고객님</h2></div><span>{formatDate(item.receivedAt)}</span></header>
               <dl><div><dt>지역</dt><dd>{item.region}</dd></div><div><dt>평수</dt><dd>{item.areaSize}</dd></div><div><dt>상담 희망일</dt><dd>{item.visitDate} {item.visitTime}</dd></div><div><dt>예상 금액</dt><dd>{item.budget.toLocaleString()}만원</dd></div></dl>
-              <footer><Link className="original-button" href={`/consultations/${encodeURIComponent(item.id)}`}>원본 보기 <ExternalLink /></Link><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></footer>
+              <footer><Link className="original-button" href={`/consultations/${encodeURIComponent(item.id)}`}>원본 보기 <ExternalLink /></Link><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => void changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></footer>
             </article>
           ))}
         </div>

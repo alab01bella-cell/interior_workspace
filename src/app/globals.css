@@ -252,6 +252,17 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 
 /* Consultations */
 .consultations-page { display: flex; min-height: 0; flex: 1; flex-direction: column; margin-top: 28px; }
+.consultation-detail { margin: 28px 0 60px; }
+.consultation-detail > header { display:flex;align-items:center;justify-content:space-between;gap:20px; }
+.consultation-detail h1 { margin:4px 0 0;font-size:32px; }
+.detail-summary,.detail-section dl { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:22px 0; }
+.detail-summary div,.detail-section dl div { padding:14px;background:#fff;border:1px solid var(--line);border-radius:10px; }
+.detail-summary dt,.detail-section dt { color:var(--muted);font-size:12px; }
+.detail-summary dd,.detail-section dd { margin:5px 0 0;white-space:pre-wrap;overflow-wrap:anywhere; }
+.detail-section { margin-top:18px;padding:20px;background:#fff;border:1px solid var(--line);border-radius:14px; }
+.detail-section h2 { margin:0;font-size:18px; }.detail-section dl { margin-bottom:0; }
+.detail-actions { display:flex;gap:10px; }.detail-actions a,.detail-actions button,.public-link-row button { padding:10px 14px;color:#fff;background:var(--brand-strong);border:0;border-radius:8px;text-decoration:none;cursor:pointer; }
+.public-link-row { display:flex;gap:10px;margin-top:14px; }.public-link-row input { min-width:0;flex:1;padding:10px;border:1px solid var(--line);border-radius:8px; }
 .consultations-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
 .consultations-heading p { margin: 0 0 5px; color: var(--brand-strong); font-size: 12px; font-weight: 800; letter-spacing: .12em; }
 .consultations-heading h1 { margin: 0; font-size: 34px; letter-spacing: -.055em; line-height: 1.15; }

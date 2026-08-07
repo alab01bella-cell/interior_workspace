@@ -3,6 +3,7 @@ import { ConsultationsPage } from "@/components/consultations/consultations-page
 import type { ConsultationStatus } from "@/types/consultation";
 import { requireWorkspace } from "@/lib/auth/require-user";
 import { toWorkspaceIdentity } from "@/lib/workspaces/workspace-repository";
+import { listConsultations, toConsultation } from "@/lib/consultations/consultation-repository";
 
 const statuses: ConsultationStatus[] = ["접수", "예약", "완료", "계약"];
 
@@ -10,5 +11,6 @@ export default async function ConsultationsRoute({ searchParams }: { searchParam
   const context = await requireWorkspace();
   const { status } = await searchParams;
   const initialStatus = statuses.includes(status as ConsultationStatus) ? status as ConsultationStatus : "전체";
-  return <AppShell identity={toWorkspaceIdentity(context)}><ConsultationsPage consultations={[]} initialStatus={initialStatus} /></AppShell>;
+  const consultations=(await listConsultations(context.workspace.id)).map(toConsultation);
+  return <AppShell identity={toWorkspaceIdentity(context)}><ConsultationsPage consultations={consultations} initialStatus={initialStatus} /></AppShell>;
 }

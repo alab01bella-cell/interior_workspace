@@ -3,6 +3,7 @@ import { DashboardDataSection } from "@/components/dashboard/dashboard-data-sect
 import { requireWorkspace } from "@/lib/auth/require-user";
 import { formatGreetingSubject, getGreetingForSeoulTime } from "@/lib/presentation/greeting";
 import { toWorkspaceIdentity } from "@/lib/workspaces/workspace-repository";
+import { listConsultations, toConsultation } from "@/lib/consultations/consultation-repository";
 
 function getKoreanDate() {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -19,6 +20,7 @@ export default async function DashboardPage() {
   const identity = toWorkspaceIdentity(context);
   const greetingSubject = formatGreetingSubject(identity.displayName, identity.jobTitle);
   const greeting = getGreetingForSeoulTime();
+  const consultations=(await listConsultations(context.workspace.id)).map(toConsultation);
   return (
     <AppShell identity={identity}>
       <section className="welcome-section">
@@ -28,7 +30,7 @@ export default async function DashboardPage() {
           <p className="today">오늘은 {getKoreanDate()}</p>
         </div>
       </section>
-      <DashboardDataSection consultations={[]} todos={[]} />
+      <DashboardDataSection consultations={consultations} todos={[]} />
     </AppShell>
   );
 }

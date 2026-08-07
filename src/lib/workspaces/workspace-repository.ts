@@ -110,6 +110,32 @@ export function toWorkspaceIdentity(context: WorkspaceContext): WorkspaceIdentit
   };
 }
 
+function publicKey(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(24));
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+export async function ensureConsultationPublicKey(workspaceId: string): Promise<string> {
+  const db = await getDb();
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const key = publicKey();
+    try {
+      await db.prepare(`UPDATE workspaces SET consultation_public_key=COALESCE(consultation_public_key, ?), updated_at=datetime('now') WHERE id=? AND status='ACTIVE'`).bind(key, workspaceId).run();
+      const row = await db.prepare(`SELECT consultation_public_key FROM workspaces WHERE id=? AND status='ACTIVE'`).bind(workspaceId).first<{ consultation_public_key:string|null }>();
+      if (row?.consultation_public_key) return row.consultation_public_key;
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("consultation_public_key")) continue;
+      throw error;
+    }
+  }
+  throw new Error("public_key_unavailable");
+}
+
+export async function findWorkspaceByPublicKey(key:string): Promise<{id:string;name:string}|null> {
+  if (!/^[a-f0-9]{48}$/.test(key)) return null;
+  return (await getDb()).prepare(`SELECT id,name FROM workspaces WHERE consultation_public_key=? AND status='ACTIVE' AND onboarding_completed=1 LIMIT 1`).bind(key).first<{id:string;name:string}>();
+}
+
 function slugBase(name: string): string {
   const normalized = name.normalize("NFKD").toLowerCase()
     .replace(/[^a-z0-9가-힣]+/g, "-")

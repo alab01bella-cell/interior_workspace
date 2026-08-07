@@ -1,6 +1,8 @@
 import type { ChecklistAnswerValue, StoredFileInfo } from "./checklist";
 
 export type ConsultationStatus = "접수" | "예약" | "완료" | "계약";
+export type ConsultationDbStatus = "RECEIVED" | "RESERVED" | "COMPLETED" | "CONTRACTED";
+export type ExternalSyncStatus = "PENDING" | "PARTIAL" | "FAILED" | "SYNCED" | "PERMISSION_REQUIRED";
 
 export interface Consultation {
   id: string;
@@ -22,6 +24,11 @@ export interface Consultation {
   originalAnswers?: Record<string, ChecklistAnswerValue>;
   sitePhotoFiles?: StoredFileInfo[];
   referenceImageFiles?: StoredFileInfo[];
+  contactMethod?: string;
+  formVersion?: string;
+  driveFolderId?: string | null;
+  externalSyncStatus?: ExternalSyncStatus;
+  sheetSyncedAt?: string | null;
 }
 
 export interface StoredConsultation extends Consultation {

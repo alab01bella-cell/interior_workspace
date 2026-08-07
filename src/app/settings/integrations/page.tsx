@@ -1,9 +1,10 @@
 import { ExternalLink, HardDrive, LockKeyhole } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { DriveConnectButton } from "@/components/integrations/drive-connect-button";
+import { PublicConsultationLink } from "@/components/integrations/public-consultation-link";
 import { requireWorkspace } from "@/lib/auth/require-user";
 import { findPublicDriveConnection } from "@/lib/google/drive-connection-repository";
-import { toWorkspaceIdentity } from "@/lib/workspaces/workspace-repository";
+import { ensureConsultationPublicKey, toWorkspaceIdentity } from "@/lib/workspaces/workspace-repository";
 
 interface PageProps {
   searchParams: Promise<{ result?: string; error?: string; warning?: string; setup?: string }>;
@@ -23,6 +24,7 @@ export default async function IntegrationsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const isOwner = context.membership.role === "OWNER";
   const isConnected = connection?.connectionStatus === "CONNECTED";
+  const consultationPublicKey=isOwner?await ensureConsultationPublicKey(context.workspace.id):null;
 
   return (
     <AppShell identity={toWorkspaceIdentity(context)}>
@@ -94,6 +96,7 @@ export default async function IntegrationsPage({ searchParams }: PageProps) {
             </div>
           </div>
         </article>
+        {consultationPublicKey&&<article className="integration-card"><div className="integration-body"><h2>고객 상담 접수 링크</h2><p className="integration-description">고객에게 전달할 로그인 없는 실제 상담 접수 URL입니다.</p><PublicConsultationLink path={`/consult/${consultationPublicKey}`}/></div></article>}
       </section>
     </AppShell>
   );

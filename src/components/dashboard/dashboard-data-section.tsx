@@ -34,9 +34,8 @@ export function DashboardDataSection({
   const recent = [...consultations]
     .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
     .slice(0, 5);
-  const today = demo
-    ? consultations.filter((consultation) => consultation.visitDate === "2026-08-04")
-    : [];
+  const todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year:"numeric",month:"2-digit",day:"2-digit" }).format(new Date());
+  const today = consultations.filter((consultation) => consultation.visitDate === (demo ? "2026-08-04" : todayKey));
 
   return (
     <>
