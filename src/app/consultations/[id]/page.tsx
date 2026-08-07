@@ -6,7 +6,6 @@ import { checklistAnswerSections } from "@/lib/checklist/checklist-data";
 import { findConsultation, toConsultation } from "@/lib/consultations/consultation-repository";
 import { toWorkspaceIdentity } from "@/lib/workspaces/workspace-repository";
 import { listConsultationFiles } from "@/lib/consultations/consultation-file-repository";
-import { ConsultationFilesPanel } from "@/components/consultations/consultation-files-panel";
 
 const display=(value:unknown)=>Array.isArray(value)?value.join(", "):typeof value==="boolean"?(value?"동의":"미동의"):String(value??"")||"-";
 
@@ -35,7 +34,7 @@ export default async function ConsultationDetailRoute({params,searchParams}:{par
           {context.membership.role==="OWNER"&&record.externalSyncStatus!=="SYNCED"&&<form action={`/api/consultations/${encodeURIComponent(record.id)}/sync`} method="post"><button type="submit">다시 동기화</button></form>}
         </div>
         {checklistAnswerSections.map((section)=><article className="detail-section" key={section.title}><h2>{section.title}</h2><dl>{section.fields.filter((field)=>field.kind!=="files").map((field)=><div key={field.name}><dt>{field.label}</dt><dd>{display(record.answers[field.name])}</dd></div>)}</dl></article>)}
-        <ConsultationFilesPanel consultationId={record.id} initialFiles={files.map(({id,fileCategory,originalFileName,fileSize})=>({id,fileCategory,originalFileName,fileSize}))}/>
+        <nav className="detail-file-links" aria-label="상담 파일 관리"><a href={`/images?consultation=${encodeURIComponent(record.id)}`}>이미지 {files.filter(file=>file.fileCategory==="FIELD_PHOTO"||file.fileCategory==="BEFORE"||file.fileCategory==="AFTER").length}개 ›</a><a href={`/documents?consultation=${encodeURIComponent(record.id)}`}>서류 {files.filter(file=>file.fileCategory==="DOCUMENT"||file.fileCategory==="CHECKLIST_ORIGINAL").length}개 ›</a></nav>
       </section>
     </AppShell>
   );

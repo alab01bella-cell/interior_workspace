@@ -22,8 +22,8 @@ export const primaryNavigation: readonly NavigationItem[] = [
   { label: "대시보드", href: "/dashboard", icon: LayoutDashboard },
   { label: "상담목록", href: "/consultations", icon: ListFilter },
   { label: "예약", href: "#", icon: CalendarDays },
-  { label: "서류", href: "#", icon: Files },
-  { label: "이미지", href: "#", icon: FileImage },
+  { label: "이미지", href: "/images", icon: FileImage },
+  { label: "서류", href: "/documents", icon: Files },
   { label: "File", href: "#", icon: FolderOpen },
 ];
 

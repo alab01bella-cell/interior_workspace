@@ -63,11 +63,11 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
       <section className="consultations-surface">
         <div className="consultations-table-wrap">
           <table className="consultations-table">
-            <thead><tr><th>상태</th><th>고객 이름</th><th>지역</th><th>평수</th><th>상담 희망일</th><th>예상 금액</th><th>접수일</th><th>상담 원본</th><th>관리</th></tr></thead>
+            <thead><tr><th>상태</th><th>고객 이름</th><th>자료</th><th>지역</th><th>평수</th><th>상담 희망일</th><th>예상 금액</th><th>접수일</th><th>상담 원본</th><th>관리</th></tr></thead>
             <tbody>
               {pageItems.map((item) => (
                 <tr key={item.id}>
-                  <td><StatusBadge status={item.status} /></td><td><strong>{item.customerName}</strong></td><td>{item.region}</td><td>{item.areaSize}</td><td>{item.visitDate}<small>{item.visitTime}</small></td><td>{item.budget.toLocaleString()}만원</td><td>{formatDate(item.receivedAt)}</td>
+                  <td><StatusBadge status={item.status} /></td><td><strong>{item.customerName}</strong></td><td><div className="consultation-file-shortcuts"><Link href={`/images?consultation=${encodeURIComponent(item.id)}`}>이미지</Link><Link href={`/documents?consultation=${encodeURIComponent(item.id)}`}>서류</Link></div></td><td>{item.region}</td><td>{item.areaSize}</td><td>{item.visitDate}<small>{item.visitTime}</small></td><td>{item.budget.toLocaleString()}만원</td><td>{formatDate(item.receivedAt)}</td>
                   <td><Link className="original-button" href={`/consultations/${encodeURIComponent(item.id)}`}>원본 보기 <ExternalLink /></Link></td>
                   <td><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => void changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></td>
                 </tr>
@@ -81,7 +81,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
             <article className="consultation-mobile-card" key={item.id}>
               <header><div><StatusBadge status={item.status} /><h2>{item.customerName} 고객님</h2></div><span>{formatDate(item.receivedAt)}</span></header>
               <dl><div><dt>지역</dt><dd>{item.region}</dd></div><div><dt>평수</dt><dd>{item.areaSize}</dd></div><div><dt>상담 희망일</dt><dd>{item.visitDate} {item.visitTime}</dd></div><div><dt>예상 금액</dt><dd>{item.budget.toLocaleString()}만원</dd></div></dl>
-              <footer><Link className="original-button" href={`/consultations/${encodeURIComponent(item.id)}`}>원본 보기 <ExternalLink /></Link><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => void changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></footer>
+              <div className="consultation-file-shortcuts"><Link href={`/images?consultation=${encodeURIComponent(item.id)}`}>이미지</Link><Link href={`/documents?consultation=${encodeURIComponent(item.id)}`}>서류</Link></div><footer><Link className="original-button" href={`/consultations/${encodeURIComponent(item.id)}`}>원본 보기 <ExternalLink /></Link><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => void changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></footer>
             </article>
           ))}
         </div>

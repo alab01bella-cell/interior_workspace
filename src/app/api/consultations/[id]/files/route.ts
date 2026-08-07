@@ -25,5 +25,5 @@ export async function POST(request:Request,{params}:{params:Promise<{id:string}>
     if(!driveId){const uploaded=await uploadDriveFile(token,{name:file.name,parentId:folderId,mimeType:file.type||"application/octet-stream",bytes:await file.arrayBuffer(),appProperties:{consultation_upload:`${consultation.id}:${key}`}});driveId=uploaded.id;size=uploaded.size;}
     await saveConsultationFile({workspaceId:context.workspace.id,consultationId:consultation.id,driveFileId:driveId,driveFolderId:folderId,fileCategory:categoryValue,originalFileName:file.name,mimeType:file.type||"application/octet-stream",fileSize:size,uploadedByUserId:context.user.id,idempotencyKey:key});
   }
-  const records=await listConsultationFiles(context.workspace.id,consultation.id);return NextResponse.json({files:records.map(({id,fileCategory,originalFileName,fileSize})=>({id,fileCategory,originalFileName,fileSize}))});
+  const records=await listConsultationFiles(context.workspace.id,consultation.id);return NextResponse.json({files:records.map(({id,fileCategory,originalFileName,fileSize,createdAt})=>({id,fileCategory,originalFileName,fileSize,createdAt}))});
 }

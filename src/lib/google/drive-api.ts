@@ -81,6 +81,7 @@ export async function getDriveFileLink(accessToken:string,fileId:string):Promise
   if(response.status===404)return null;if(!response.ok)throw new Error("drive_file_check_failed");
   const file=await response.json() as {name?:string;trashed?:boolean;webViewLink?:string};if(file.trashed||!file.webViewLink)return null;return {webViewLink:file.webViewLink,name:file.name??""};
 }
+export async function downloadDriveFile(accessToken:string,fileId:string):Promise<Response|null>{const response=await driveFetch(accessToken,`/files/${encodeURIComponent(fileId)}?alt=media`);if(response.status===404)return null;if(!response.ok)throw new Error("drive_file_download_failed");return response;}
 
 export async function createSpreadsheetFile(accessToken:string,name:string,parentId:string):Promise<string> {
   const response=await driveFetch(accessToken,"/files?fields=id",{method:"POST",body:JSON.stringify({name,mimeType:"application/vnd.google-apps.spreadsheet",parents:[parentId]})});

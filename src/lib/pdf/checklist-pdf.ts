@@ -2,6 +2,7 @@ import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { checklistAnswerSections } from "@/lib/checklist/checklist-data";
 import type { ConsultationRecord } from "@/lib/consultations/consultation-repository";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 const A4:[number,number]=[595.28,841.89];
 const MARGIN=48;
@@ -36,8 +37,9 @@ function drawMixed(page:PDFPage,text:string,x:number,y:number,size:number,color:
 }
 
 async function loadFont(path:string):Promise<ArrayBuffer>{
-  const base=(process.env.AUTH_URL??"http://localhost:3000").replace(/\/$/,"");
-  const response=await fetch(`${base}${path}`,{cache:"force-cache",signal:AbortSignal.timeout(15_000)});
+  let response:Response|undefined;
+  try { const {env}=await getCloudflareContext({async:true}); if(env.ASSETS)response=await env.ASSETS.fetch(new Request(`https://assets.local${path}`)); } catch { /* Local Next runtime uses the public URL fallback. */ }
+  if(!response?.ok){const base=(process.env.AUTH_URL??"http://localhost:3000").replace(/\/$/,"");response=await fetch(`${base}${path}`,{cache:"force-cache",signal:AbortSignal.timeout(15_000)});}
   if(!response.ok)throw new Error("pdf_font_unavailable");return response.arrayBuffer();
 }
 
