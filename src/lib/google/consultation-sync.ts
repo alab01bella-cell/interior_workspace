@@ -14,7 +14,7 @@ import {
   appendRows,
   hasConsultationRow,
   initializeConsultationSpreadsheet,
-  updateStatusCell,
+  updateStatusAndScheduleCells,
 } from "./sheets-api";
 import { getDb } from "@/lib/db/client";
 import { createChecklistPdf } from "@/lib/pdf/checklist-pdf";
@@ -38,6 +38,7 @@ export const summaryHeaders = [
   "연락 방법",
   "연락처",
   "상태",
+  "확정 상담일시",
 ];
 export const rawHeaders = [
   "상담ID",
@@ -265,6 +266,7 @@ export async function syncConsultation(
               record.contactMethod,
               record.contactValue,
               STATUS_FROM_DB[record.status],
+              record.scheduledAt ?? "",
             ],
           ]);
         summaryOk = true;
@@ -337,11 +339,13 @@ export async function syncConsultationStatus(
       token,
       connection.driveRootFolderId,
     );
-    await updateStatusCell(
+    await initializeConsultationSpreadsheet(token,resources.spreadsheet,summaryHeaders,rawHeaders);
+    await updateStatusAndScheduleCells(
       token,
       resources.spreadsheet,
       id,
       STATUS_FROM_DB[record.status],
+      record.scheduledAt ? new Intl.DateTimeFormat("ko-KR",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(new Date(record.scheduledAt)) : "",
     );
     const complete = Boolean(
       record.driveFolderId &&

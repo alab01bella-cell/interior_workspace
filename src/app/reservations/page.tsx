@@ -1,0 +1,12 @@
+import Link from "next/link";
+import { AppShell } from "@/components/layout/app-shell";
+import { StatusBadge } from "@/components/consultations/status-badge";
+import { requireWorkspace } from "@/lib/auth/require-user";
+import { listScheduledConsultations,toConsultation } from "@/lib/consultations/consultation-repository";
+import { formatSeoulDateTime,seoulDateKey } from "@/lib/consultations/reservation-time";
+import { formatConsultationRegion } from "@/lib/consultations/region-display";
+import { toWorkspaceIdentity } from "@/lib/workspaces/workspace-repository";
+
+function ReservationCard({record}:{record:Awaited<ReturnType<typeof listScheduledConsultations>>[number]}){const item=toConsultation(record);return <article className="reservation-card"><div><time>{formatSeoulDateTime(record.scheduledAt!)}</time><h2>{record.clientName} 고객님</h2><p>{formatConsultationRegion(record.region)} · {record.area} · {record.budgetAmount.toLocaleString()}만원</p><p>{record.contactMethod} · {record.contactValue}</p>{record.scheduledNote&&<small>{record.scheduledNote}</small>}</div><StatusBadge status={item.status}/><nav><Link href={`/consultations/${record.id}`}>상담 보기</Link><Link href={`/images?consultation=${record.id}`}>이미지</Link><Link href={`/documents?consultation=${record.id}`}>서류</Link></nav></article>}
+
+export default async function ReservationsPage(){const context=await requireWorkspace(),records=await listScheduledConsultations(context.workspace.id),now=new Date(),todayKey=seoulDateKey(now);const today=records.filter((r)=>seoulDateKey(r.scheduledAt!)===todayKey),upcoming=records.filter((r)=>seoulDateKey(r.scheduledAt!)>todayKey),past=records.filter((r)=>seoulDateKey(r.scheduledAt!)<todayKey).reverse();return <AppShell identity={toWorkspaceIdentity(context)}><main className="reservations-page"><header><p className="eyebrow">SCHEDULE</p><h1>예약</h1><span>확정된 상담 일정을 빠르게 확인하세요.</span></header><section><h2>오늘 예약 <strong>{today.length}건</strong></h2>{today.length?today.map((record)=><ReservationCard key={record.id} record={record}/>):<div className="reservation-empty">오늘 예정된 상담이 없습니다.</div>}</section><section><h2>다가오는 예약 <strong>{upcoming.length}건</strong></h2>{upcoming.length?upcoming.map((record)=><ReservationCard key={record.id} record={record}/>):<div className="reservation-empty">다가오는 예약이 없습니다.</div>}</section><section><h2>지난 예약 <strong>{past.length}건</strong></h2>{past.length?past.map((record)=><ReservationCard key={record.id} record={record}/>):<div className="reservation-empty">지난 예약이 없습니다.</div>}</section></main></AppShell>}

@@ -41,7 +41,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
   const changeStatus = async (id: string, status: ConsultationStatus) => {
     const previous=consultations.find((item)=>item.id===id)?.status;
     setConsultations((items) => items.map((item) => item.id === id ? { ...item, status } : item));
-    const response=await fetch(`/api/consultations/${encodeURIComponent(id)}/status`,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({status})});
+    const response=await fetch(`/api/consultations/${encodeURIComponent(id)}/status`,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({status,idempotencyKey:crypto.randomUUID()})});
     if(!response.ok&&previous)setConsultations((items)=>items.map((item)=>item.id===id?{...item,status:previous}:item));
   };
 

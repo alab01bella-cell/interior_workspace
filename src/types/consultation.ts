@@ -29,6 +29,9 @@ export interface Consultation {
   driveFolderId?: string | null;
   externalSyncStatus?: ExternalSyncStatus;
   sheetSyncedAt?: string | null;
+  scheduledAt?: string | null;
+  scheduledNote?: string | null;
+  statusUpdatedAt?: string | null;
 }
 
 export interface StoredConsultation extends Consultation {
