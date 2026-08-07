@@ -43,7 +43,7 @@ export function Sidebar({ identity }: { identity: WorkspaceIdentity }) {
           <form action="/api/auth/logout" key={label} method="post">
             <button className="sidebar-link sidebar-link--button" type="submit"><Icon aria-hidden="true" /><span>로그아웃</span></button>
           </form>
-        ) : (
+        ) : label === "체크리스트" ? <Link className="sidebar-link" href={identity.consultationChecklistUrl??"/settings/integrations"} key={label} target={identity.consultationChecklistUrl?"_blank":undefined} rel={identity.consultationChecklistUrl?"noreferrer":undefined}><Icon aria-hidden="true" /><span>{label}</span></Link> : (
           <Link className="sidebar-link" href={href} key={label}><Icon aria-hidden="true" /><span>{label}</span></Link>
         ))}
       </nav>

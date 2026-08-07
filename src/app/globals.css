@@ -548,6 +548,8 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .file-missing-notice { padding: 11px 14px; border: 1px solid #eadfce; border-radius: 9px; background: #fffaf3; color: #695e50; }
 .detail-file-links,.consultation-file-shortcuts { display: flex; gap: 8px; }
 .detail-file-links a,.consultation-file-shortcuts a { border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; background: #fff; color: inherit; font-size: 12px; text-decoration: none; }
+.consultation-region { min-width: 100px; white-space: nowrap; }
+.consultation-number { display: inline-grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; background: #f3f3f3; color: var(--muted); font-size: 11px; }
 .files-page { margin-top: 44px; }
 .files-page > header p { margin: 0; color: var(--brand-strong); font-size: 11px; font-weight: 700; letter-spacing: .14em; }
 .files-page > header h1 { margin: 6px 0 24px; font-size: 34px; }

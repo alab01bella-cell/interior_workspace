@@ -53,6 +53,7 @@ export interface Workspace {
   createdAt: string;
   updatedAt: string;
   status: WorkspaceStatus;
+  consultationShortCode: string | null;
 }
 
 export interface WorkspaceMembership {
@@ -78,4 +79,5 @@ export interface WorkspaceIdentity {
   profileImageUrl: string | null;
   jobTitle: string | null;
   workspaceName: string;
+  consultationChecklistUrl: string | null;
 }

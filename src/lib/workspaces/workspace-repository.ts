@@ -25,6 +25,7 @@ interface ContextRow {
   workspace_created_at: string;
   workspace_updated_at: string;
   workspace_status: Workspace["status"];
+  consultation_short_code: string | null;
   membership_id: string;
   role: WorkspaceMembership["role"];
   membership_status: WorkspaceMembership["status"];
@@ -42,7 +43,7 @@ const contextQuery = `
     w.id AS workspace_id, w.name AS workspace_name, w.slug AS workspace_slug,
     w.owner_user_id, w.plan, w.onboarding_completed AS workspace_onboarding_completed,
     w.google_drive_connection_status, w.created_at AS workspace_created_at,
-    w.updated_at AS workspace_updated_at, w.status AS workspace_status,
+    w.updated_at AS workspace_updated_at, w.status AS workspace_status, w.consultation_short_code,
     wm.id AS membership_id, wm.role, wm.status AS membership_status,
     wm.joined_at, wm.created_at AS membership_created_at,
     wm.updated_at AS membership_updated_at
@@ -81,6 +82,7 @@ function mapContext(row: ContextRow): WorkspaceContext {
       createdAt: row.workspace_created_at,
       updatedAt: row.workspace_updated_at,
       status: row.workspace_status,
+      consultationShortCode: row.consultation_short_code,
     },
     membership: {
       id: row.membership_id,
@@ -107,6 +109,7 @@ export function toWorkspaceIdentity(context: WorkspaceContext): WorkspaceIdentit
     profileImageUrl: context.user.profileImageUrl,
     jobTitle: context.user.jobTitle,
     workspaceName: context.workspace.name,
+    consultationChecklistUrl: context.workspace.consultationShortCode?`/c/${context.workspace.consultationShortCode}`:null,
   };
 }
 

@@ -73,7 +73,7 @@ export async function uploadDriveFile(accessToken:string,input:{name:string;pare
   ]);
   const response=await fetch(`${DRIVE_UPLOAD_API}/files?uploadType=multipart&fields=id,size`,{method:"POST",headers:{authorization:`Bearer ${accessToken}`,"content-type":`multipart/related; boundary=${boundary}`},body,cache:"no-store",signal:AbortSignal.timeout(60_000)});
   if(!response.ok)throw new Error(response.status===403?"google_permission_required":"drive_file_upload_failed");
-  const file=await response.json() as {id?:string;size?:string};if(!file.id)throw new Error("drive_file_upload_failed");return {id:file.id,size:Number(file.size??body.size)};
+  const file=await response.json() as {id?:string;size?:string};const uploadedSize=Number(file.size);if(!file.id||!Number.isFinite(uploadedSize)||uploadedSize!==payload.byteLength)throw new Error("drive_upload_size_mismatch");return {id:file.id,size:uploadedSize};
 }
 
 export async function getDriveFileLink(accessToken:string,fileId:string):Promise<{webViewLink:string;name:string}|null>{

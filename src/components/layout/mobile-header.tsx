@@ -43,6 +43,7 @@ export function MobileHeader({ identity }: { identity: WorkspaceIdentity }) {
                   <button className="mobile-menu-link mobile-menu-link--button" type="submit"><Icon aria-hidden="true" /><span>로그아웃</span></button>
                 </form>
               );
+              if(label==="체크리스트")return <Link className="mobile-menu-link" href={identity.consultationChecklistUrl??"/settings/integrations"} key={label} target={identity.consultationChecklistUrl?"_blank":undefined} rel={identity.consultationChecklistUrl?"noreferrer":undefined}><Icon aria-hidden="true"/><span>{label}</span></Link>;
               return (
               <Link
                 className={`mobile-menu-link${active ? " is-active" : ""}`}
