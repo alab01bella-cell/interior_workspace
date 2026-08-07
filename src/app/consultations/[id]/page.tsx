@@ -31,7 +31,7 @@ export default async function ConsultationDetailRoute({params,searchParams}:{par
         <div className="detail-actions">
           {record.driveFolderId&&<a href={`https://drive.google.com/drive/folders/${encodeURIComponent(record.driveFolderId)}`} target="_blank" rel="noreferrer">고객 폴더 열기</a>}
           {original&&<a href={`/api/consultations/${record.id}/files/${original.id}/open`} target="_blank" rel="noreferrer">인쇄용 원본 PDF</a>}
-          {context.membership.role==="OWNER"&&record.externalSyncStatus!=="SYNCED"&&<form action={`/api/consultations/${encodeURIComponent(record.id)}/sync`} method="post"><button type="submit">다시 동기화</button></form>}
+          {context.membership.role==="OWNER"&&<form action={`/api/consultations/${encodeURIComponent(record.id)}/sync`} method="post"><button type="submit">{record.externalSyncStatus==="SYNCED"?"원본 PDF 다시 생성":"다시 동기화"}</button></form>}
         </div>
         {checklistAnswerSections.map((section)=><article className="detail-section" key={section.title}><h2>{section.title}</h2><dl>{section.fields.filter((field)=>field.kind!=="files").map((field)=><div key={field.name}><dt>{field.label}</dt><dd>{display(record.answers[field.name])}</dd></div>)}</dl></article>)}
         <nav className="detail-file-links" aria-label="상담 파일 관리"><a href={`/images?consultation=${encodeURIComponent(record.id)}`}>이미지 {files.filter(file=>file.fileCategory==="FIELD_PHOTO"||file.fileCategory==="BEFORE"||file.fileCategory==="AFTER").length}개 ›</a><a href={`/documents?consultation=${encodeURIComponent(record.id)}`}>서류 {files.filter(file=>file.fileCategory==="DOCUMENT"||file.fileCategory==="CHECKLIST_ORIGINAL").length}개 ›</a></nav>
