@@ -10,9 +10,11 @@ import { formatConsultationRegion } from "@/lib/consultations/region-display";
 const statusFilters: ("전체" | ConsultationStatus)[] = ["전체", "접수", "예약", "완료", "계약"];
 const pageSize = 8;
 
-const formatDate = (value: string) => new Intl.DateTimeFormat("ko-KR", {
-  year: "2-digit", month: "2-digit", day: "2-digit",
-}).format(new Date(value));
+const formatReceivedAt = (value: string) => {
+  const parts = new Intl.DateTimeFormat("en-CA", { year:"2-digit", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", hourCycle:"h23", timeZone:"Asia/Seoul" }).formatToParts(new Date(value));
+  const part=(type:Intl.DateTimeFormatPartTypes)=>parts.find(item=>item.type===type)?.value??"";
+  return `${part("year")}.${part("month")}.${part("day")} ${part("hour")}:${part("minute")}`;
+};
 
 export function ConsultationsPage({ consultations: initialConsultations, initialStatus = "전체" }: { consultations: Consultation[]; initialStatus?: "전체" | ConsultationStatus }) {
   const [consultations, setConsultations] = useState(initialConsultations);
@@ -60,14 +62,15 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
       <section className="consultations-surface">
         <div className="consultations-table-wrap">
           <table className="consultations-table">
-            <thead><tr><th>번호</th><th>상태</th><th>고객 이름</th><th>지역</th><th>평수</th><th>상담 희망일</th><th>예상 금액</th><th>접수일</th><th>상담 원본</th><th>자료</th><th>관리</th></tr></thead>
+            <thead><tr><th>번호</th><th>상태</th><th>고객 이름</th><th>지역</th><th>평수</th><th>상담 희망일</th><th>예상 금액</th><th>상담 원본</th><th>자료</th><th>관리</th><th>접수일</th></tr></thead>
             <tbody>
               {pageItems.map((item,itemIndex) => (
                 <tr key={item.id}>
-                  <td>{(currentPage-1)*pageSize+itemIndex+1}</td><td><StatusBadge status={item.status} /></td><td><strong>{item.customerName}</strong></td><td className="consultation-region">{formatConsultationRegion(item.region)}</td><td>{item.areaSize}</td><td>{item.visitDate}<small>{item.visitTime}</small></td><td>{item.budget.toLocaleString()}만원</td><td>{formatDate(item.receivedAt)}</td>
+                  <td>{(currentPage-1)*pageSize+itemIndex+1}</td><td><StatusBadge status={item.status} /></td><td><strong>{item.customerName}</strong></td><td className="consultation-region">{formatConsultationRegion(item.region)}</td><td>{item.areaSize}</td><td>{item.visitDate}<small>{item.visitTime}</small></td><td>{item.budget.toLocaleString()}만원</td>
                   <td><Link className="original-button" href={`/consultations/${encodeURIComponent(item.id)}`}>원본 보기 <ExternalLink /></Link></td>
                   <td><div className="consultation-file-shortcuts"><Link href={`/images?consultation=${encodeURIComponent(item.id)}`}>이미지</Link><Link href={`/documents?consultation=${encodeURIComponent(item.id)}`}>서류</Link></div></td>
                   <td><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => void changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></td>
+                  <td className="consultation-received-at">{formatReceivedAt(item.receivedAt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -77,7 +80,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
         <div className="consultation-mobile-list">
           {pageItems.map((item,itemIndex) => (
             <article className="consultation-mobile-card" key={item.id}>
-              <header><div><span className="consultation-number">{(currentPage-1)*pageSize+itemIndex+1}</span><StatusBadge status={item.status} /><h2>{item.customerName} 고객님</h2></div><span>{formatDate(item.receivedAt)}</span></header>
+              <header><div><span className="consultation-number">{(currentPage-1)*pageSize+itemIndex+1}</span><StatusBadge status={item.status} /><h2>{item.customerName} 고객님</h2></div><span>{formatReceivedAt(item.receivedAt)}</span></header>
               <dl><div><dt>지역</dt><dd>{formatConsultationRegion(item.region)}</dd></div><div><dt>평수</dt><dd>{item.areaSize}</dd></div><div><dt>상담 희망일</dt><dd>{item.visitDate} {item.visitTime}</dd></div><div><dt>예상 금액</dt><dd>{item.budget.toLocaleString()}만원</dd></div></dl>
               <div className="consultation-file-shortcuts"><Link href={`/images?consultation=${encodeURIComponent(item.id)}`}>이미지</Link><Link href={`/documents?consultation=${encodeURIComponent(item.id)}`}>서류</Link></div><footer><Link className="original-button" href={`/consultations/${encodeURIComponent(item.id)}`}>원본 보기 <ExternalLink /></Link><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => void changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></footer>
             </article>
