@@ -13,6 +13,8 @@ interface AddressSearchFieldProps {
   onAddressChange: (value: string) => void;
   onAddressDetailChange: (value: string) => void;
   onError: (message: string) => void;
+  errors?: { address?:string; addressDetail?:string };
+  required?: boolean;
 }
 
 export function AddressSearchField({
@@ -21,6 +23,8 @@ export function AddressSearchField({
   onAddressChange,
   onAddressDetailChange,
   onError,
+  errors = {},
+  required = false,
 }: AddressSearchFieldProps) {
   const detailInputRef = useRef<HTMLInputElement>(null);
   const [scriptLoadFailed, setScriptLoadFailed] = useState(false);
@@ -57,30 +61,34 @@ export function AddressSearchField({
         src={POSTCODE_SCRIPT_URL}
         strategy="afterInteractive"
       />
-      <div className={styles.field}>
-        <label className={styles.fieldLabel} htmlFor="addressInput">현장 주소</label>
+      <div className={`${styles.field}${errors.address?` ${styles.fieldInvalid}`:""}`} data-field-name="address">
+        <label className={styles.fieldLabel} htmlFor="addressInput">현장 주소{required&&<span className={styles.requiredMark}>필수</span>}</label>
         <div className={styles.addressRow}>
           <input
             id="addressInput"
             name="address"
             placeholder="주소 검색 버튼을 눌러주세요."
             readOnly
+            aria-invalid={Boolean(errors.address)}
             value={address}
           />
           <button className={styles.addressButton} onClick={openAddressSearch} type="button">주소 검색</button>
         </div>
         <p className={styles.hint}>도로명주소 검색 후 상세주소를 입력해주세요.</p>
+        {errors.address&&<p className={styles.fieldError} role="alert">{errors.address}</p>}
       </div>
-      <div className={styles.field}>
-        <label className={styles.fieldLabel} htmlFor="addressDetailInput">상세주소</label>
+      <div className={`${styles.field}${errors.addressDetail?` ${styles.fieldInvalid}`:""}`} data-field-name="addressDetail">
+        <label className={styles.fieldLabel} htmlFor="addressDetailInput">상세주소{required&&<span className={styles.requiredMark}>필수</span>}</label>
         <input
           id="addressDetailInput"
+          aria-invalid={Boolean(errors.addressDetail)}
           name="addressDetail"
           onChange={(event) => onAddressDetailChange(event.target.value)}
           placeholder="동/호수, 건물명 등 상세주소"
           ref={detailInputRef}
           value={addressDetail}
         />
+        {errors.addressDetail&&<p className={styles.fieldError} role="alert">{errors.addressDetail}</p>}
       </div>
     </>
   );

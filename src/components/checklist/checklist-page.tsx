@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { checklistSteps, formatBudget, formatPhone, getLocalToday, initialChecklistState, spaceDetailGroups } from "@/lib/checklist/checklist-data";
+import { stepForChecklistField, validateChecklistRequired } from "@/lib/checklist/checklist-validation";
 import { createChecklistSubmission, mapSubmissionToConsultation } from "@/lib/demo/demo-consultation-mapper";
 import { demoLocalStorageConsultationRepository } from "@/lib/demo/demo-local-storage-consultation-repository";
 import type { ChecklistFormData } from "@/types/checklist";
@@ -20,14 +21,27 @@ export function ChecklistPage({ mode, submissionPath, workspaceName }: { mode: C
   const [form, setForm] = useState<ChecklistFormData>(() => ({ ...initialChecklistState }));
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string,string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const submissionInProgress = useRef(false);
   const minDate = useMemo(() => getLocalToday(), []);
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+  const answers=()=>form as unknown as Record<string,unknown>;
+  const clearFieldError=(name:string)=>setFieldErrors((current)=>{if(!current[name])return current;const next={...current};delete next[name];return next;});
+  const focusFirstError=(errors:Record<string,string>)=>{
+    const name=Object.keys(errors)[0];
+    if(!name)return;
+    window.setTimeout(()=>{
+      const field=document.querySelector<HTMLElement>(`[data-field-name="${name}"]`);
+      field?.scrollIntoView({behavior:"smooth",block:"center"});
+      field?.querySelector<HTMLElement>(`[name="${name}"]`)?.focus({preventScroll:true});
+    });
+  };
 
   const updateText = (name: string, rawValue: string) => {
+    clearFieldError(name);
     let value = rawValue;
     if (name === "phone") value = formatPhone(value);
     if (name === "budget") value = formatBudget(value);
@@ -39,6 +53,7 @@ export function ChecklistPage({ mode, submissionPath, workspaceName }: { mode: C
   };
 
   const updateSingle = (name: string, value: string) => {
+    clearFieldError(name);
     setError("");
     setForm((state) => {
       const next = { ...state, [name]: value };
@@ -49,6 +64,7 @@ export function ChecklistPage({ mode, submissionPath, workspaceName }: { mode: C
   };
 
   const updateMultiple = (name: string, value: string, checked: boolean) => {
+    clearFieldError(name);
     setError("");
     setForm((state) => {
       const current = state[name];
@@ -72,6 +88,7 @@ export function ChecklistPage({ mode, submissionPath, workspaceName }: { mode: C
   };
 
   const move = (direction: 1 | -1) => {
+    if(direction===1){const errors=validateChecklistRequired(answers(),currentStep);setFieldErrors(errors);if(Object.keys(errors).length){setError("");focusFirstError(errors);return;}}
     setError("");
     setCurrentStep((step) => Math.min(checklistSteps.length - 1, Math.max(0, step + direction)));
     scrollTop();
@@ -79,29 +96,17 @@ export function ChecklistPage({ mode, submissionPath, workspaceName }: { mode: C
 
   const submit = async () => {
     if (submissionInProgress.current) return;
-    const required: { name: keyof ChecklistFormData; label: string; step: number }[] = [
-      { name: "address", label: "현장 주소", step: 0 },
-      { name: "areaSize", label: "평수", step: 0 },
-      { name: "visitDate", label: "상담 희망일", step: 1 },
-      { name: "budget", label: "생각 중인 예산", step: 3 },
-      { name: "name", label: "성함", step: 7 },
-      { name: "phone", label: "휴대폰 번호", step: 7 },
-      { name: "privacyConsent", label: "개인정보 수집 및 이용 동의", step: 7 },
-    ];
-    const missing = required.find(({ name }) => {
-      const value = form[name];
-      return typeof value === "boolean" ? !value : !String(value).trim();
-    });
-    if (missing) {
-      setCurrentStep(missing.step);
-      setError(`${missing.step + 1}단계의 '${missing.label}' 항목을 입력해주세요.`);
-      window.setTimeout(() => {
-        document.querySelector<HTMLElement>(`[name="${String(missing.name)}"]`)?.focus();
-        scrollTop();
-      });
+    const requiredErrors=validateChecklistRequired(answers());
+    if(Object.keys(requiredErrors).length){
+      const firstName=Object.keys(requiredErrors)[0];
+      setFieldErrors(requiredErrors);
+      setCurrentStep(stepForChecklistField(firstName));
+      setError("");
+      focusFirstError(requiredErrors);
       return;
     }
     setError("");
+    setFieldErrors({});
     submissionInProgress.current = true;
     setIsSubmitting(true);
     try {
@@ -132,6 +137,7 @@ export function ChecklistPage({ mode, submissionPath, workspaceName }: { mode: C
     setForm({ ...initialChecklistState });
     setCurrentStep(0);
     setError("");
+    setFieldErrors({});
     setIsComplete(false);
     scrollTop();
   };
@@ -145,7 +151,7 @@ export function ChecklistPage({ mode, submissionPath, workspaceName }: { mode: C
         <div className={styles.formColumn}>
           <ProgressHeader currentStep={currentStep} />
           <form onSubmit={(event) => { event.preventDefault(); if (currentStep === checklistSteps.length - 1) void submit(); }}>
-            <StepCard currentStep={currentStep} form={form} minDate={minDate} setConsent={(checked) => setForm((state) => ({ ...state, privacyConsent: checked }))} setError={setError} setFiles={(name, files) => setForm((state) => ({ ...state, [name]: files }))} setMultiple={updateMultiple} setSingle={updateSingle} setText={updateText} />
+            <StepCard currentStep={currentStep} fieldErrors={fieldErrors} form={form} minDate={minDate} setConsent={(checked) => {clearFieldError("privacyConsent");setForm((state) => ({ ...state, privacyConsent: checked }));}} setError={setError} setFiles={(name, files) => setForm((state) => ({ ...state, [name]: files }))} setMultiple={updateMultiple} setSingle={updateSingle} setText={updateText} />
             {error && <div aria-live="assertive" className={styles.error} role="alert">{error}</div>}
             <ChecklistNavigation currentStep={currentStep} isSubmitting={isSubmitting} onNext={() => move(1)} onPrevious={() => move(-1)} onSubmit={() => void submit()} totalSteps={checklistSteps.length} />
           </form>

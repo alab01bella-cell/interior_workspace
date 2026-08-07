@@ -1,4 +1,5 @@
 import { checklistAnswerSections } from "@/lib/checklist/checklist-data";
+import { validateChecklistRequired } from "@/lib/checklist/checklist-validation";
 import type { ChecklistAnswerValue } from "@/types/checklist";
 import type { ConsultationDbStatus, ConsultationStatus } from "@/types/consultation";
 
@@ -51,6 +52,7 @@ export function validateSubmission(body: unknown, today = new Intl.DateTimeForma
     else if (Array.isArray(value) && value.length <= 30 && value.every((item) => typeof item === "string" && item.length <= 200)) answers[key] = value;
     else throw new Error("invalid_payload");
   }
+  if (Object.keys(validateChecklistRequired(answers)).length > 0) throw new Error("invalid_payload");
   const clientName = text(answers.name, 100, true);
   const contactValue = text(answers.phone, 30, true);
   const contactMethod = text(answers.preferredContact, 100) || "휴대폰";
