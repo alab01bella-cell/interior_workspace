@@ -34,7 +34,7 @@ export default async function ConsultationDetailRoute({params,searchParams}:{par
           <div><dt>접수일</dt><dd>{new Date(record.submittedAt).toLocaleString("ko-KR")}</dd></div>
           <div><dt>외부 동기화</dt><dd>{record.externalSyncStatus}</dd></div>
         </dl>
-        <section className="consultation-schedule"><div><p className="eyebrow">SCHEDULE</p><h2>상담 일정</h2>{record.scheduledAt?<><strong>{formatSeoulDateTime(record.scheduledAt)}</strong>{record.scheduledNote&&<p>{record.scheduledNote}</p>}</>:<p>아직 예약되지 않았습니다.</p>}</div><div className="schedule-actions"><ReservationEditor consultationId={record.id} scheduledAt={record.scheduledAt} scheduledNote={record.scheduledNote} status={consultation.status}/><ProgressActions consultationId={record.id} status={consultation.status}/></div></section>
+        <section className="consultation-schedule"><div><p className="eyebrow">SCHEDULE</p><h2>상담 일정</h2>{record.scheduledAt?<><strong>{formatSeoulDateTime(record.scheduledAt)}</strong>{record.scheduledNote&&<p>{record.scheduledNote}</p>}</>:<p>아직 예약되지 않았습니다.</p>}</div><div className="schedule-actions"><ReservationEditor consultation={consultation}/><ProgressActions consultationId={record.id} status={consultation.status}/></div></section>
         <div className="detail-actions">
           {record.driveFolderId&&<a href={`https://drive.google.com/drive/folders/${encodeURIComponent(record.driveFolderId)}`} target="_blank" rel="noreferrer">고객 폴더 열기</a>}
           {original&&<a href={`/api/consultations/${record.id}/files/${original.id}/open`} target="_blank" rel="noreferrer">인쇄용 원본 PDF</a>}

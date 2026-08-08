@@ -14,7 +14,7 @@ export async function PUT(request:NextRequest,{params}:{params:Promise<{id:strin
   const {id}=await params; const record=await saveReservation({workspaceId:context.workspace.id,consultationId:id,scheduledAt,scheduledNote:note||null,actorUserId:context.user.id,idempotencyKey:body!.idempotencyKey as string});
   if(!record)return NextResponse.json({error:"not_found"},{status:404});
   await syncConsultationStatus(context.workspace.id,id,context.workspace.name);
-  return NextResponse.json({ok:true,status:record.status,scheduledAt:record.scheduledAt});
+  return NextResponse.json({ok:true,status:record.status,scheduledAt:record.scheduledAt,scheduledNote:record.scheduledNote});
 }
 
 export async function DELETE(request:NextRequest,{params}:{params:Promise<{id:string}>}) {

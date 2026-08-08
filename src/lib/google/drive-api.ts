@@ -83,6 +83,24 @@ export async function getDriveFileLink(accessToken:string,fileId:string):Promise
 }
 export async function downloadDriveFile(accessToken:string,fileId:string):Promise<Response|null>{const response=await driveFetch(accessToken,`/files/${encodeURIComponent(fileId)}?alt=media`);if(response.status===404)return null;if(!response.ok)throw new Error("drive_file_download_failed");return response;}
 
+export interface DriveChildFile {
+  id:string; name:string; mimeType:string; size:number; createdTime:string; appProperties:Record<string,string>;
+}
+export async function listDirectDriveChildren(accessToken:string,parentId:string):Promise<DriveChildFile[]> {
+  const files:DriveChildFile[]=[]; let pageToken="";
+  do {
+    const q=`'${parentId.replace(/'/g,"\\'")}' in parents and trashed=false`;
+    const query=new URLSearchParams({q,fields:"nextPageToken,files(id,name,mimeType,size,createdTime,appProperties)",pageSize:"1000"});
+    if(pageToken)query.set("pageToken",pageToken);
+    const response=await driveFetch(accessToken,`/files?${query.toString()}`);
+    if(!response.ok)throw new Error(response.status===403?"google_permission_required":"drive_children_list_failed");
+    const data=await response.json() as {nextPageToken?:string;files?:Array<{id?:string;name?:string;mimeType?:string;size?:string;createdTime?:string;appProperties?:Record<string,string>}>};
+    for(const file of data.files??[])if(file.id&&file.name&&file.mimeType)files.push({id:file.id,name:file.name,mimeType:file.mimeType,size:Number(file.size)||0,createdTime:file.createdTime??new Date(0).toISOString(),appProperties:file.appProperties??{}});
+    pageToken=data.nextPageToken??"";
+  } while(pageToken);
+  return files;
+}
+
 export async function createSpreadsheetFile(accessToken:string,name:string,parentId:string):Promise<string> {
   const response=await driveFetch(accessToken,"/files?fields=id",{method:"POST",body:JSON.stringify({name,mimeType:"application/vnd.google-apps.spreadsheet",parents:[parentId]})});
   if(!response.ok) throw new Error("spreadsheet_create_failed");
