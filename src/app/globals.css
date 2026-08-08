@@ -280,25 +280,25 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .sort-label { display: flex; align-items: center; gap: 6px; margin-left: auto; color: var(--muted); font-size: 13px; }
 .sort-label svg { width: 16px; }
 .consultations-surface { display: flex; min-height: 0; flex: 1; flex-direction: column; margin-top: 14px; overflow: hidden; background: #fff; border: 1px solid #f0f1f2; border-radius: 14px; box-shadow: var(--shadow-card); }
-.consultations-table-wrap { min-height: 0; flex: 1; overflow: auto; }
-.consultations-table { width: 100%; min-width: 1240px; border-collapse: collapse; table-layout: fixed; }
+.consultations-table-wrap { min-width: 0; min-height: 0; flex: 1; overflow-x: hidden; overflow-y: auto; }
+.consultations-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .consultations-table th { height: 46px; padding: 0 12px; color: #85878d; background: #fafafa; border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 650; text-align: left; vertical-align: middle; white-space: nowrap; }
 .consultations-table td { height: 62px; padding: 9px 12px; color: #55585e; border-bottom: 1px solid #f2f2f3; font-size: 14px; line-height: 1.4; vertical-align: middle; }
 .consultations-table tbody tr { transition: background .15s ease; }
 .consultations-table tbody tr:hover { background: #fffbf6; }
 .consultations-table td strong { color: var(--ink); font-size: 15px; }
 .consultations-table td small { display: block; margin-top: 3px; color: #a0a2a7; font-size: 12px; }
-.consultations-table th:nth-child(1) { width: 62px; }
-.consultations-table th:nth-child(2) { width: 86px; }
-.consultations-table th:nth-child(3) { width: 118px; }
-.consultations-table th:nth-child(4) { width: 138px; }
-.consultations-table th:nth-child(5) { width: 92px; }
-.consultations-table th:nth-child(6) { width: 132px; }
-.consultations-table th:nth-child(7) { width: 112px; }
-.consultations-table th:nth-child(8) { width: 112px; }
-.consultations-table th:nth-child(9) { width: 150px; }
-.consultations-table th:nth-child(10) { width: 100px; }
-.consultations-table th:nth-child(11) { width: 138px; }
+.consultations-table th:nth-child(1) { width: 48px; }
+.consultations-table th:nth-child(2) { width: 76px; }
+.consultations-table th:nth-child(3) { width: 96px; }
+.consultations-table th:nth-child(4) { width: 112px; }
+.consultations-table th:nth-child(5) { width: 68px; }
+.consultations-table th:nth-child(6) { width: 108px; }
+.consultations-table th:nth-child(7) { width: 92px; }
+.consultations-table th:nth-child(8) { width: 82px; }
+.consultations-table th:nth-child(9) { width: 118px; }
+.consultations-table th:nth-child(10) { width: 82px; }
+.consultations-table th:nth-child(11) { width: 112px; }
 .consultations-table th:nth-child(4),.consultations-table td:nth-child(4) { padding-right: 18px; }
 .consultations-table th:nth-child(5),.consultations-table td:nth-child(5) { padding-left: 18px; }
 .status-badge { display: inline-flex; min-width: 45px; height: 25px; align-items: center; justify-content: center; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
@@ -309,6 +309,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .original-button { display: inline-flex; height: 32px; align-items: center; gap: 5px; padding: 0 10px; color: var(--brand-strong); background: #fff8ef; border: 1px solid #ffddb5; border-radius: 7px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; }
 .original-button:hover { background: #ffeedb; }
 .original-button svg { width: 13px; height: 13px; }
+.consultation-original-link { display: inline-flex; align-items: center; gap: 5px; color: #646a62; font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.consultation-original-link:hover { color: var(--brand-strong); }
+.consultation-original-link svg { width: 15px; height: 15px; color: var(--brand-strong); }
 .consultations-table select, .consultation-mobile-card select { height: 32px; padding: 0 25px 0 9px; color: #55585e; background: #fff; border: 1px solid #dddfe2; border-radius: 7px; font-size: 13px; cursor: pointer; }
 .pagination { display: flex; min-height: 52px; align-items: center; justify-content: space-between; padding: 8px 14px; border-top: 1px solid var(--line); }
 .pagination > span { color: var(--muted); font-size: 12px; }
@@ -463,6 +466,12 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .dashboard-grid { gap: 22px; }
   .consultation-toolbar { flex-wrap: wrap; }
   .sort-label { margin-left: 0; }
+}
+
+@media (min-width: 721px) and (max-width: 1200px) {
+  .consultations-table th:nth-child(1), .consultations-table td:nth-child(1),
+  .consultations-table th:nth-child(7), .consultations-table td:nth-child(7),
+  .consultations-table th:nth-child(11), .consultations-table td:nth-child(11) { display: none; }
 }
 
 @media (max-width: 720px) {

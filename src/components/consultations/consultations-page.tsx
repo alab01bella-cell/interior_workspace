@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ExternalLink, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Search, SlidersHorizontal } from "lucide-react";
 import type { Consultation, ConsultationStatus } from "@/types/consultation";
 import { StatusBadge } from "./status-badge";
 import { formatConsultationRegion } from "@/lib/consultations/region-display";
@@ -91,7 +91,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
               {pageItems.map((item,itemIndex) => (
                 <tr key={item.id}>
                   <td>{(currentPage-1)*pageSize+itemIndex+1}</td><td><StatusBadge status={item.status} />{item.scheduledAt&&<button type="button" className="confirmed-schedule" onClick={()=>setReservationTarget(item)}>{formatSeoulDateTime(item.scheduledAt)}</button>}</td><td><strong>{item.customerName}</strong></td><td className="consultation-region">{formatConsultationRegion(item.region)}</td><td>{item.areaSize}</td><td>{item.visitDate}<small>{item.visitTime}</small></td><td>{item.budget.toLocaleString()}만원</td>
-                  <td><Link className="original-button" href={`/consultations/${encodeURIComponent(item.id)}`}>원본 보기 <ExternalLink /></Link></td>
+                  <td><Link className="consultation-original-link" href={`/consultations/${encodeURIComponent(item.id)}`}><FileText /> 상담지</Link></td>
                   <td><div className="consultation-file-shortcuts"><Link href={`/images?consultation=${encodeURIComponent(item.id)}`}>이미지</Link><Link href={`/documents?consultation=${encodeURIComponent(item.id)}`}>서류</Link></div></td>
                   <td><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => void changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></td>
                   <td className="consultation-received-at">{formatReceivedAt(item.receivedAt)}</td>
@@ -106,7 +106,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
             <article className="consultation-mobile-card" key={item.id}>
               <header><div><span className="consultation-number">{(currentPage-1)*pageSize+itemIndex+1}</span><StatusBadge status={item.status} /><h2>{item.customerName} 고객님</h2></div><span>{formatReceivedAt(item.receivedAt)}</span></header>
               <dl><div><dt>지역</dt><dd>{formatConsultationRegion(item.region)}</dd></div><div><dt>평수</dt><dd>{item.areaSize}</dd></div><div><dt>상담 희망일</dt><dd>{item.visitDate} {item.visitTime}</dd></div>{item.scheduledAt&&<div><dt>확정 예약</dt><dd><button type="button" className="confirmed-schedule" onClick={()=>setReservationTarget(item)}>{formatSeoulDateTime(item.scheduledAt)}</button></dd></div>}<div><dt>예상 금액</dt><dd>{item.budget.toLocaleString()}만원</dd></div></dl>
-              <div className="consultation-file-shortcuts"><Link href={`/images?consultation=${encodeURIComponent(item.id)}`}>이미지</Link><Link href={`/documents?consultation=${encodeURIComponent(item.id)}`}>서류</Link></div><footer><Link className="original-button" href={`/consultations/${encodeURIComponent(item.id)}`}>원본 보기 <ExternalLink /></Link><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => void changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></footer>
+              <div className="consultation-file-shortcuts"><Link href={`/images?consultation=${encodeURIComponent(item.id)}`}>이미지</Link><Link href={`/documents?consultation=${encodeURIComponent(item.id)}`}>서류</Link></div><footer><Link className="consultation-original-link" href={`/consultations/${encodeURIComponent(item.id)}`}><FileText /> 상담지</Link><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => void changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></footer>
             </article>
           ))}
         </div>
