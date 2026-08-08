@@ -3,6 +3,7 @@ import { MessageCircleMore } from "lucide-react";
 import type { Consultation } from "@/types/consultation";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/consultations/status-badge";
+import { formatSeoulInput } from "@/lib/consultations/reservation-time";
 
 export function ScheduleCard({ consultations, detailLinksEnabled }: { consultations: Consultation[]; detailLinksEnabled: boolean }) {
   return (
@@ -14,10 +15,10 @@ export function ScheduleCard({ consultations, detailLinksEnabled }: { consultati
       <div className="schedule-list">
         {consultations.map((consultation) => {
           const content = <>
-            <time>{consultation.visitTime || "시간 미정"}</time>
+            <time>{consultation.scheduledAt?formatSeoulInput(consultation.scheduledAt).slice(11,16):consultation.visitTime||"시간 미정"}</time>
             <span className="schedule-dot" aria-hidden="true" />
             <div>
-              <strong>{consultation.customerName} 고객님 <StatusBadge status={consultation.status} /></strong>
+              <strong>{consultation.customerName} <StatusBadge status={consultation.status} /></strong>
               <p>{consultation.region} · {consultation.areaSize}</p>
             </div>
           </>;

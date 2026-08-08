@@ -22,6 +22,7 @@ const formatReceivedAt = (value: string) => {
 const receivedDateKey = (value: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
 
 export function ConsultationsPage({ consultations: initialConsultations, initialStatus = "전체",members,currentUserId }: { consultations: Consultation[]; initialStatus?: "전체" | ConsultationStatus;members:{userId:string;name:string}[];currentUserId:string }) {
+  const [todayReceivedKey,setTodayReceivedKey]=useState(()=>receivedDateKey(new Date().toISOString()));
   const [consultations, setConsultations] = useState(initialConsultations);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"전체" | ConsultationStatus>(initialStatus);
@@ -29,11 +30,13 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
   const [receivedTo, setReceivedTo] = useState("");
   const [pageSize, setPageSize] = useState<(typeof pageSizeOptions)[number]>(10);
   const [assigneeFilter,setAssigneeFilter]=useState("ALL");
+  const [sortOrder,setSortOrder]=useState<"DESC"|"ASC">("DESC");
   const [page, setPage] = useState(1);
   const [reservationTarget, setReservationTarget] = useState<Consultation | null>(null);
   const [toast, setToast] = useState("");
 
   useEffect(() => { if (!toast) return; const timer=setTimeout(()=>setToast(""),3500); return ()=>clearTimeout(timer); }, [toast]);
+  useEffect(()=>{const timer=window.setInterval(()=>setTodayReceivedKey(receivedDateKey(new Date().toISOString())),60_000);return()=>window.clearInterval(timer)},[]);
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -42,8 +45,9 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
       .filter((item) => !receivedFrom || receivedDateKey(item.receivedAt) >= receivedFrom)
       .filter((item) => !receivedTo || receivedDateKey(item.receivedAt) <= receivedTo)
       .filter((item)=>assigneeFilter==="ALL"||assigneeFilter==="ME"&&item.assignedUserId===currentUserId||assigneeFilter==="UNASSIGNED"&&!item.assignedUserId||item.assignedUserId===assigneeFilter)
-      .filter((item) => !normalizedQuery || `${item.customerName} ${item.region}`.toLowerCase().includes(normalizedQuery));
-  }, [consultations, query, statusFilter, receivedFrom, receivedTo,assigneeFilter,currentUserId]);
+      .filter((item) => !normalizedQuery || `${item.customerName} ${item.region}`.toLowerCase().includes(normalizedQuery))
+      .sort((a,b)=>sortOrder==="DESC"?b.receivedAt.localeCompare(a.receivedAt):a.receivedAt.localeCompare(b.receivedAt));
+  }, [consultations, query, statusFilter, receivedFrom, receivedTo,assigneeFilter,currentUserId,sortOrder]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -99,7 +103,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
           {(receivedFrom||receivedTo)&&<button type="button" onClick={()=>{setReceivedFrom("");setReceivedTo("");setPage(1)}}>초기화</button>}
         </div>
         <label className="assignee-filter"><span>담당자</span><select value={assigneeFilter} onChange={(event)=>{setAssigneeFilter(event.target.value);setPage(1)}}><option value="ALL">전체</option><option value="ME">내 상담</option><option value="UNASSIGNED">미지정</option>{members.map((member)=><option key={member.userId} value={member.userId}>{member.name}</option>)}</select></label>
-        <span className="sort-label"><SlidersHorizontal /> 최신순</span>
+        <label className="sort-label"><SlidersHorizontal/><select aria-label="상담 정렬" value={sortOrder} onChange={(event)=>{setSortOrder(event.target.value as "DESC"|"ASC");setPage(1)}}><option value="DESC">최신순</option><option value="ASC">오래된순</option></select></label>
       </section>
 
       <section className="consultations-surface">
@@ -109,7 +113,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
             <tbody>
               {pageItems.map((item,itemIndex) => (
                 <tr key={item.id}>
-                  <td>{(currentPage-1)*pageSize+itemIndex+1}</td><td><StatusBadge status={item.status} />{item.scheduledAt&&<button type="button" className="confirmed-schedule" onClick={()=>setReservationTarget(item)}>{formatSeoulDateTime(item.scheduledAt)}</button>}</td><td><strong>{item.customerName}</strong><select className="inline-assignee" aria-label={`${item.customerName} 담당자`} value={item.assignedUserId??""} onChange={(event)=>void changeAssignee(item,event.target.value||null)}><option value="">담당자 미지정</option>{members.map((member)=><option key={member.userId} value={member.userId}>{member.name}</option>)}</select>{(item.status==="완료"||item.status==="계약")&&<Link className="inline-quote" href={`/quotes?consultation=${encodeURIComponent(item.id)}`}>{item.quoteAmount?formatManWon(item.quoteAmount):quoteStatusLabel[item.quoteStatus]}</Link>}</td><td className="consultation-region">{formatConsultationRegion(item.region)}</td><td>{item.areaSize}</td><td>{item.visitDate}<small>{item.visitTime}</small></td><td>{item.budget.toLocaleString()}만원</td>
+                  <td>{(currentPage-1)*pageSize+itemIndex+1}</td><td><StatusBadge status={item.status} />{item.scheduledAt&&<button type="button" className="confirmed-schedule" onClick={()=>setReservationTarget(item)}>{formatSeoulDateTime(item.scheduledAt)}</button>}</td><td><strong>{item.customerName}{receivedDateKey(item.receivedAt)===todayReceivedKey&&<span className="new-consultation-badge">NEW</span>}</strong><select className="inline-assignee" aria-label={`${item.customerName} 담당자`} value={item.assignedUserId??""} onChange={(event)=>void changeAssignee(item,event.target.value||null)}><option value="">담당자 미지정</option>{members.map((member)=><option key={member.userId} value={member.userId}>{member.name}</option>)}</select>{(item.status==="완료"||item.status==="계약")&&<Link className="inline-quote" href={`/quotes?consultation=${encodeURIComponent(item.id)}`}>{item.quoteAmount?formatManWon(item.quoteAmount):quoteStatusLabel[item.quoteStatus]}</Link>}</td><td className="consultation-region">{formatConsultationRegion(item.region)}</td><td>{item.areaSize}</td><td>{item.visitDate}<small>{item.visitTime}</small></td><td>{item.budget.toLocaleString()}만원</td>
                   <td><Link className="consultation-original-link" href={`/consultations/${encodeURIComponent(item.id)}`}><FileText /> 상담지</Link></td>
                   <td><div className="consultation-file-shortcuts"><Link href={`/images?consultation=${encodeURIComponent(item.id)}`}>이미지</Link><Link href={`/documents?consultation=${encodeURIComponent(item.id)}`}>서류</Link></div></td>
                   <td><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => void changeStatus(item.id, event.target.value as ConsultationStatus)}>{(item.status==="계약"?["계약"]:statusFilters.slice(1,-1)).map((status) => <option key={status}>{status}</option>)}</select></td>
@@ -123,7 +127,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
         <div className="consultation-mobile-list">
           {pageItems.map((item,itemIndex) => (
             <article className="consultation-mobile-card" key={item.id}>
-              <header><div><span className="consultation-number">{(currentPage-1)*pageSize+itemIndex+1}</span><StatusBadge status={item.status} /><h2>{item.customerName} 고객님</h2></div><span>{formatReceivedAt(item.receivedAt)}</span></header>
+              <header><div><span className="consultation-number">{(currentPage-1)*pageSize+itemIndex+1}</span><StatusBadge status={item.status} /><h2>{item.customerName} 고객님 {receivedDateKey(item.receivedAt)===todayReceivedKey&&<span className="new-consultation-badge">NEW</span>}</h2></div><span>{formatReceivedAt(item.receivedAt)}</span></header>
               <dl><div><dt>지역</dt><dd>{formatConsultationRegion(item.region)}</dd></div><div><dt>평수</dt><dd>{item.areaSize}</dd></div><div><dt>담당자</dt><dd><select className="inline-assignee" value={item.assignedUserId??""} onChange={(event)=>void changeAssignee(item,event.target.value||null)}><option value="">담당자 미지정</option>{members.map((member)=><option key={member.userId} value={member.userId}>{member.name}</option>)}</select></dd></div><div><dt>상담 희망일</dt><dd>{item.visitDate} {item.visitTime}</dd></div>{item.scheduledAt&&<div><dt>확정 예약</dt><dd><button type="button" className="confirmed-schedule" onClick={()=>setReservationTarget(item)}>{formatSeoulDateTime(item.scheduledAt)}</button></dd></div>}<div><dt>예상 금액</dt><dd>{item.budget.toLocaleString()}만원</dd></div></dl>
               <div className="consultation-file-shortcuts"><Link href={`/images?consultation=${encodeURIComponent(item.id)}`}>이미지</Link><Link href={`/documents?consultation=${encodeURIComponent(item.id)}`}>서류</Link>{(item.status==="완료"||item.status==="계약")&&<Link href={`/quotes?consultation=${encodeURIComponent(item.id)}`}>{item.quoteAmount?formatManWon(item.quoteAmount):quoteStatusLabel[item.quoteStatus]}</Link>}</div><footer><Link className="consultation-original-link" href={`/consultations/${encodeURIComponent(item.id)}`}><FileText /> 상담지</Link><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => void changeStatus(item.id, event.target.value as ConsultationStatus)}>{(item.status==="계약"?["계약"]:statusFilters.slice(1,-1)).map((status) => <option key={status}>{status}</option>)}</select></footer>
             </article>

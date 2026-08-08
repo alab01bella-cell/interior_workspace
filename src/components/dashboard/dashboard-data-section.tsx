@@ -2,7 +2,6 @@ import { CalendarClock, CircleCheckBig, FilePenLine, Handshake } from "lucide-re
 import type { Consultation, ConsultationStatus } from "@/types/consultation";
 import type { TodoItem } from "@/types/dashboard";
 import { CalendarCard } from "./calendar-card";
-import { RecentConsultationsCard } from "./recent-consultations-card";
 import { ScheduleCard } from "./schedule-card";
 import { StatCard } from "./stat-card";
 import { TodoCard } from "./todo-card";
@@ -31,11 +30,9 @@ export function DashboardDataSection({
   demo?: boolean;
 }) {
   const counts = statusCounts(consultations);
-  const recent = [...consultations]
-    .sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime())
-    .slice(0, 5);
   const todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year:"numeric",month:"2-digit",day:"2-digit" }).format(new Date());
-  const today = consultations.filter((consultation) => consultation.visitDate === (demo ? "2026-08-04" : todayKey));
+  const scheduled=consultations.filter((consultation)=>Boolean(consultation.scheduledAt));
+  const today = consultations.filter((consultation) => demo?consultation.visitDate==="2026-08-04":consultation.scheduledAt&&new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(consultation.scheduledAt))===todayKey).sort((a,b)=>(a.scheduledAt??a.visitTime).localeCompare(b.scheduledAt??b.visitTime));
 
   return (
     <>
@@ -43,14 +40,11 @@ export function DashboardDataSection({
         {statMeta.map((stat) => <StatCard {...stat} count={counts[stat.label]} demo={demo} key={stat.label} />)}
       </section>
       <section className="dashboard-grid">
-        <div className="dashboard-column">
+        <div className="dashboard-left-column">
           <ScheduleCard consultations={today} detailLinksEnabled={!demo} />
-          <RecentConsultationsCard consultations={recent} detailLinksEnabled={!demo} />
+          <TodoCard initialItems={todos} demo={demo}/>
         </div>
-        <div className="dashboard-column">
-          <CalendarCard consultations={consultations} demo={demo} />
-          <TodoCard initialItems={todos} />
-        </div>
+        <CalendarCard consultations={demo?consultations:scheduled} demo={demo} />
       </section>
     </>
   );
