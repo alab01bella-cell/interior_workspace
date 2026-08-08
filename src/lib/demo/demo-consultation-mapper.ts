@@ -63,5 +63,7 @@ export function mapSubmissionToConsultation(submission: ChecklistSubmission): St
     originalAnswers: answers,
     sitePhotoFiles: submission.sitePhotoFiles,
     referenceImageFiles: submission.referenceImageFiles,
+    quoteStatus:"NOT_CREATED",quoteAmount:null,quoteSentAt:null,quoteNote:null,quoteFileId:null,
+    contractOutcome:"PENDING",contractDecidedAt:null,lostReason:null,lostReasonNote:null,
   };
 }

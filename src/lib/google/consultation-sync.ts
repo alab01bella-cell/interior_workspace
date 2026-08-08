@@ -15,6 +15,7 @@ import {
   hasConsultationRow,
   initializeConsultationSpreadsheet,
   updateStatusAndScheduleCells,
+  updateCommercialCells,
 } from "./sheets-api";
 import { getDb } from "@/lib/db/client";
 import { createChecklistPdf } from "@/lib/pdf/checklist-pdf";
@@ -39,6 +40,10 @@ export const summaryHeaders = [
   "연락처",
   "상태",
   "확정 상담일시",
+  "견적 금액",
+  "견적 발송일",
+  "계약 결과",
+  "불성사 사유",
 ];
 export const rawHeaders = [
   "상담ID",
@@ -267,6 +272,10 @@ export async function syncConsultation(
               record.contactValue,
               STATUS_FROM_DB[record.status],
               record.scheduledAt ?? "",
+              record.quoteAmount ?? "",
+              record.quoteSentAt ?? "",
+              record.contractOutcome,
+              record.lostReason ?? "",
             ],
           ]);
         summaryOk = true;
@@ -366,4 +375,17 @@ export async function syncConsultationStatus(
       error: code,
     });
   }
+}
+
+export async function syncConsultationCommercials(workspaceId:string,id:string,workspaceName:string){
+  const record=await findConsultation(workspaceId,id);if(!record)return;
+  try{
+    const connection=await findDriveConnection(workspaceId);if(!connection?.driveRootFolderId)throw new Error("google_connection_unavailable");
+    const token=await getGoogleAccessToken(connection);const resources=await resourceIds(workspaceId,workspaceName,token,connection.driveRootFolderId);
+    await initializeConsultationSpreadsheet(token,resources.spreadsheet,summaryHeaders,rawHeaders);
+    await updateStatusAndScheduleCells(token,resources.spreadsheet,id,STATUS_FROM_DB[record.status],record.scheduledAt??"");
+    await updateCommercialCells(token,resources.spreadsheet,id,{quoteAmount:record.quoteAmount,quoteSentAt:record.quoteSentAt,contractOutcome:record.contractOutcome,lostReason:record.lostReason});
+    const complete=Boolean(record.driveFolderId&&await findChecklistOriginal(id));
+    await updateSync(id,{status:complete?"SYNCED":"PARTIAL",sheetSynced:true,error:null});
+  }catch(error){const code=error instanceof Error?error.message:"google_sync_failed";await updateSync(id,{status:code==="google_permission_required"?"PERMISSION_REQUIRED":"PARTIAL",error:code});}
 }

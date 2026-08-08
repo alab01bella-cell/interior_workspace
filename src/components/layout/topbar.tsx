@@ -1,6 +1,7 @@
-import { Bell, Search, UserPlus } from "lucide-react";
+import { Search, UserPlus } from "lucide-react";
 import type { WorkspaceIdentity } from "@/types/workspace";
 import { AvatarMark } from "./avatar-mark";
+import { ConsultationNotifications } from "./consultation-notifications";
 
 export function Topbar({ identity }: { identity: WorkspaceIdentity }) {
   return (
@@ -14,10 +15,7 @@ export function Topbar({ identity }: { identity: WorkspaceIdentity }) {
         <button className="icon-button" aria-label="사용자 추가" type="button">
           <UserPlus />
         </button>
-        <button className="icon-button notification-button" aria-label="알림" type="button">
-          <Bell />
-          <span aria-hidden="true" />
-        </button>
+        <ConsultationNotifications />
         <div className="topbar-profile">
           <AvatarMark compact imageUrl={identity.profileImageUrl ?? undefined} />
           <div>

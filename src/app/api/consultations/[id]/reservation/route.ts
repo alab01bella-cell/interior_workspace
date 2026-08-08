@@ -9,8 +9,9 @@ const validKey=(value:unknown)=>typeof value==="string"&&value.length>=8&&value.
 export async function PUT(request:NextRequest,{params}:{params:Promise<{id:string}>}) {
   const context=await getWorkspaceContextForSession(); if(!context)return NextResponse.json({error:"unauthorized"},{status:401});
   const body=await request.json().catch(()=>null) as {scheduledAt?:unknown;scheduledNote?:unknown;idempotencyKey?:unknown}|null;
-  const scheduledAt=parseSeoulDateTime(body?.scheduledAt), note=typeof body?.scheduledNote==="string"?body.scheduledNote.trim():"";
-  if(!scheduledAt||note.length>1000||!validKey(body?.idempotencyKey))return NextResponse.json({error:"invalid_reservation"},{status:400});
+  const rawScheduledAt=body?.scheduledAt,scheduledAt=parseSeoulDateTime(rawScheduledAt), note=typeof body?.scheduledNote==="string"?body.scheduledNote.trim():"";
+  const thirtyMinuteSlot=typeof rawScheduledAt==="string"&&/:(?:00|30)$/.test(rawScheduledAt);
+  if(!scheduledAt||!thirtyMinuteSlot||note.length>1000||!validKey(body?.idempotencyKey))return NextResponse.json({error:"invalid_reservation"},{status:400});
   const {id}=await params; const record=await saveReservation({workspaceId:context.workspace.id,consultationId:id,scheduledAt,scheduledNote:note||null,actorUserId:context.user.id,idempotencyKey:body!.idempotencyKey as string});
   if(!record)return NextResponse.json({error:"not_found"},{status:404});
   await syncConsultationStatus(context.workspace.id,id,context.workspace.name);

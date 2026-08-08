@@ -78,7 +78,7 @@ export function ReservationEditor({ consultation, open: controlledOpen, onOpenCh
         <section className="reservation-preference"><span>고객 상담 희망일</span><strong>{consultation.visitDate || "미입력"} {consultation.visitTime}</strong></section>
         <div className="reservation-fields">
           <label>예약 날짜<input type="date" value={date} onChange={(event) => setDate(event.target.value)} required /></label>
-          <label>예약 시간<input type="time" value={time} onChange={(event) => setTime(event.target.value)} required /></label>
+          <label>예약 시간<input type="time" step="1800" value={time} onChange={(event) => setTime(event.target.value)} required /><small>30분 단위로 선택해주세요.</small></label>
           <label>예약 메모 <small>선택</small><textarea maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} placeholder="방문 전 연락, 주차 안내 등" /></label>
         </div>
         {error && <p className="reservation-error" role="alert">{error}</p>}

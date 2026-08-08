@@ -22,4 +22,7 @@ export const demoConsultations: Consultation[] = names.map((customerName, index)
   request: "체험용 상담 요청사항입니다.",
   style: "화이트 · 우드 · 미니멀",
   family: "체험용 고객",
+  quoteStatus:"NOT_CREATED",quoteAmount:null,quoteSentAt:null,quoteNote:null,quoteFileId:null,
+  contractOutcome:statuses[index%statuses.length]==="계약"?"CONTRACTED":"PENDING",
+  contractDecidedAt:null,lostReason:null,lostReasonNote:null,
 }));

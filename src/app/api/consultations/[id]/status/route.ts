@@ -8,9 +8,11 @@ export async function PATCH(request:NextRequest,{params}:{params:Promise<{id:str
   const context=await getWorkspaceContextForSession();if(!context)return NextResponse.json({error:"unauthorized"},{status:401});
   const {status,idempotencyKey}=await request.json() as {status?:ConsultationStatus;idempotencyKey?:string};
   if(!status||!statuses.has(status)||!idempotencyKey||idempotencyKey.length>100)return NextResponse.json({error:"invalid_status"},{status:400});
+  if(status==="계약")return NextResponse.json({error:"contract_outcome_required"},{status:409});
   const {id}=await params;
   const current=await findConsultation(context.workspace.id,id);
   if(!current)return NextResponse.json({error:"not_found"},{status:404});
+  if(current.contractOutcome==="CONTRACTED")return NextResponse.json({error:"contract_outcome_change_required"},{status:409});
   // 예약 상태는 반드시 예약 API에서 확정 일시와 함께 생성한다.
   if(status==="예약"&&current.status!=="RESERVED")return NextResponse.json({error:"reservation_datetime_required"},{status:409});
   if(status==="접수"&&current.status==="RESERVED"){
