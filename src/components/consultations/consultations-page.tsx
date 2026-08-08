@@ -48,7 +48,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
     const consultation=consultations.find((item)=>item.id===id);
     if(!consultation)return;
     const previous=consultation.status;
-    if(status==="예약"&&previous==="접수") { setReservationTarget(consultation); return; }
+    if(status==="예약") { setReservationTarget(consultation); return; }
     if(status==="접수"&&previous==="예약"&&!window.confirm("예약을 취소하시겠습니까?")) return;
     setConsultations((items) => items.map((item) => item.id === id ? { ...item, status } : item));
     const response=await fetch(`/api/consultations/${encodeURIComponent(id)}/status`,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({status,idempotencyKey:crypto.randomUUID()})});
@@ -61,6 +61,12 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
     setConsultations((items)=>items.map((item)=>item.id===reservationTarget.id?{...item,status:"예약",scheduledAt:value.scheduledAt,scheduledNote:value.scheduledNote}:item));
     const when=new Intl.DateTimeFormat("ko-KR",{timeZone:"Asia/Seoul",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(new Date(value.scheduledAt));
     setToast(`${when}으로 예약되었습니다.`); setReservationTarget(null);
+  };
+
+  const reservationCancelled=()=>{
+    if(!reservationTarget)return;
+    setConsultations((items)=>items.map((item)=>item.id===reservationTarget.id?{...item,status:"접수",scheduledAt:null,scheduledNote:null}:item));
+    setToast("예약이 취소되었습니다.");setReservationTarget(null);
   };
 
   return (
@@ -84,7 +90,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
             <tbody>
               {pageItems.map((item,itemIndex) => (
                 <tr key={item.id}>
-                  <td>{(currentPage-1)*pageSize+itemIndex+1}</td><td><StatusBadge status={item.status} />{item.scheduledAt&&<small className="confirmed-schedule">{formatSeoulDateTime(item.scheduledAt)}</small>}</td><td><strong>{item.customerName}</strong></td><td className="consultation-region">{formatConsultationRegion(item.region)}</td><td>{item.areaSize}</td><td>{item.visitDate}<small>{item.visitTime}</small></td><td>{item.budget.toLocaleString()}만원</td>
+                  <td>{(currentPage-1)*pageSize+itemIndex+1}</td><td><StatusBadge status={item.status} />{item.scheduledAt&&<button type="button" className="confirmed-schedule" onClick={()=>setReservationTarget(item)}>{formatSeoulDateTime(item.scheduledAt)}</button>}</td><td><strong>{item.customerName}</strong></td><td className="consultation-region">{formatConsultationRegion(item.region)}</td><td>{item.areaSize}</td><td>{item.visitDate}<small>{item.visitTime}</small></td><td>{item.budget.toLocaleString()}만원</td>
                   <td><Link className="original-button" href={`/consultations/${encodeURIComponent(item.id)}`}>원본 보기 <ExternalLink /></Link></td>
                   <td><div className="consultation-file-shortcuts"><Link href={`/images?consultation=${encodeURIComponent(item.id)}`}>이미지</Link><Link href={`/documents?consultation=${encodeURIComponent(item.id)}`}>서류</Link></div></td>
                   <td><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => void changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></td>
@@ -99,7 +105,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
           {pageItems.map((item,itemIndex) => (
             <article className="consultation-mobile-card" key={item.id}>
               <header><div><span className="consultation-number">{(currentPage-1)*pageSize+itemIndex+1}</span><StatusBadge status={item.status} /><h2>{item.customerName} 고객님</h2></div><span>{formatReceivedAt(item.receivedAt)}</span></header>
-              <dl><div><dt>지역</dt><dd>{formatConsultationRegion(item.region)}</dd></div><div><dt>평수</dt><dd>{item.areaSize}</dd></div><div><dt>상담 희망일</dt><dd>{item.visitDate} {item.visitTime}</dd></div>{item.scheduledAt&&<div><dt>확정 예약</dt><dd>{formatSeoulDateTime(item.scheduledAt)}</dd></div>}<div><dt>예상 금액</dt><dd>{item.budget.toLocaleString()}만원</dd></div></dl>
+              <dl><div><dt>지역</dt><dd>{formatConsultationRegion(item.region)}</dd></div><div><dt>평수</dt><dd>{item.areaSize}</dd></div><div><dt>상담 희망일</dt><dd>{item.visitDate} {item.visitTime}</dd></div>{item.scheduledAt&&<div><dt>확정 예약</dt><dd><button type="button" className="confirmed-schedule" onClick={()=>setReservationTarget(item)}>{formatSeoulDateTime(item.scheduledAt)}</button></dd></div>}<div><dt>예상 금액</dt><dd>{item.budget.toLocaleString()}만원</dd></div></dl>
               <div className="consultation-file-shortcuts"><Link href={`/images?consultation=${encodeURIComponent(item.id)}`}>이미지</Link><Link href={`/documents?consultation=${encodeURIComponent(item.id)}`}>서류</Link></div><footer><Link className="original-button" href={`/consultations/${encodeURIComponent(item.id)}`}>원본 보기 <ExternalLink /></Link><select aria-label={`${item.customerName} 상담 상태`} value={item.status} onChange={(event) => void changeStatus(item.id, event.target.value as ConsultationStatus)}>{statusFilters.slice(1).map((status) => <option key={status}>{status}</option>)}</select></footer>
             </article>
           ))}
@@ -108,7 +114,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
         {pageItems.length === 0 && <div className="consultations-empty">아직 접수된 상담이 없습니다.</div>}
         <footer className="pagination"><span>{(currentPage - 1) * pageSize + (pageItems.length ? 1 : 0)}–{(currentPage - 1) * pageSize + pageItems.length} / {filtered.length}</span><div><button disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))} aria-label="이전 페이지" type="button"><ChevronLeft /></button>{Array.from({ length: totalPages }, (_, index) => index + 1).map((value) => <button className={currentPage === value ? "is-active" : ""} key={value} onClick={() => setPage(value)} type="button">{value}</button>)}<button disabled={currentPage === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))} aria-label="다음 페이지" type="button"><ChevronRight /></button></div></footer>
       </section>
-      {reservationTarget&&<ReservationEditor consultation={reservationTarget} open onOpenChange={(open)=>{if(!open)setReservationTarget(null);}} onSaved={reservationSaved} showTrigger={false}/>}
+      {reservationTarget&&<ReservationEditor consultation={reservationTarget} open onOpenChange={(open)=>{if(!open)setReservationTarget(null);}} onSaved={reservationSaved} onCancelled={reservationCancelled} showTrigger={false}/>}
       {toast&&<div className="app-toast" role="status">{toast}</div>}
     </div>
   );
