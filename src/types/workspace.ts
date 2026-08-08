@@ -34,6 +34,9 @@ export interface User {
   googleName: string;
   displayName: string | null;
   profileImageUrl: string | null;
+  googleProfileImageUrl: string | null;
+  customProfileDriveFileId: string | null;
+  customProfileWorkspaceId: string | null;
   jobTitle: string | null;
   onboardingCompleted: boolean;
   createdAt: string;

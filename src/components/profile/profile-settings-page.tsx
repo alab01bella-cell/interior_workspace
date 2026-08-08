@@ -1,0 +1,14 @@
+"use client";
+
+import { ChangeEvent, useEffect, useState } from "react";
+import { ImageUp, RotateCcw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AvatarMark } from "@/components/layout/avatar-mark";
+
+export function ProfileSettingsPage({name,email,initialImageUrl,hasCustomImage,driveConnected}:{name:string;email:string;initialImageUrl:string|null;hasCustomImage:boolean;driveConnected:boolean}){
+  const router=useRouter();const [preview,setPreview]=useState(initialImageUrl),[custom,setCustom]=useState(hasCustomImage),[pending,setPending]=useState(false),[message,setMessage]=useState("");
+  useEffect(()=>()=>{if(preview?.startsWith("blob:"))URL.revokeObjectURL(preview)},[preview]);
+  const select=async(event:ChangeEvent<HTMLInputElement>)=>{const file=event.target.files?.[0];event.target.value="";if(!file)return;if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>5*1024*1024){setMessage("JPG, PNG, WebP 이미지를 5MB 이하로 선택해주세요.");return}const local=URL.createObjectURL(file);setPreview(local);setPending(true);setMessage("");const form=new FormData();form.set("image",file);const response=await fetch("/api/profile/avatar",{method:"POST",body:form});setPending(false);if(!response.ok){URL.revokeObjectURL(local);setPreview(initialImageUrl);setMessage(response.status===409?"먼저 OWNER가 Workspace Google Drive를 연결해주세요.":"사진을 업로드하지 못했습니다.");return}const result=await response.json() as {imageUrl:string};setPreview(`${result.imageUrl}${result.imageUrl.includes("?")?"&":"?"}client=${Date.now()}`);setCustom(true);setMessage("프로필 사진을 변경했습니다.");router.refresh()};
+  const reset=async()=>{setPending(true);setMessage("");const response=await fetch("/api/profile/avatar",{method:"DELETE"});const result=await response.json().catch(()=>({})) as {imageUrl?:string|null};setPending(false);if(!response.ok){setMessage("사진을 되돌리지 못했습니다.");return}setPreview(result.imageUrl??null);setCustom(false);setMessage("Google 프로필 사진으로 되돌렸습니다.");router.refresh()};
+  return <section className="profile-settings-page"><header><p>PROFILE</p><h1>프로필 설정</h1><span>Workspace에 표시되는 내 사진을 관리합니다.</span></header><article><div className="profile-avatar-preview"><AvatarMark imageUrl={preview??undefined}/></div><div className="profile-account"><h2>{name}</h2><p>{email}</p><span>JPG, PNG, WebP · 최대 5MB</span></div><div className="profile-actions"><label className={pending||!driveConnected?"is-disabled":""}><ImageUp/>사진 선택<input type="file" accept="image/jpeg,image/png,image/webp" disabled={pending||!driveConnected} onChange={(event)=>void select(event)}/></label><button type="button" disabled={pending||!custom} onClick={()=>void reset()}><RotateCcw/>Google 사진으로 되돌리기</button></div>{!driveConnected&&<p className="profile-warning">프로필 사진 업로드에는 Workspace Google Drive 연결이 필요합니다.</p>}{message&&<p className="profile-message" role="status">{message}</p>}</article></section>;
+}

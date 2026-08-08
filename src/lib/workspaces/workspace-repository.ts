@@ -9,6 +9,9 @@ interface ContextRow {
   google_name: string;
   display_name: string | null;
   profile_image_url: string | null;
+  google_profile_image_url: string | null;
+  custom_profile_drive_file_id: string | null;
+  custom_profile_workspace_id: string | null;
   job_title: string | null;
   user_onboarding_completed: number;
   user_created_at: string;
@@ -37,7 +40,8 @@ interface ContextRow {
 const contextQuery = `
   SELECT
     u.id AS user_id, u.google_sub, u.email, u.google_name, u.display_name,
-    u.profile_image_url, u.job_title, u.onboarding_completed AS user_onboarding_completed,
+    u.profile_image_url, u.google_profile_image_url, u.custom_profile_drive_file_id,
+    u.custom_profile_workspace_id, u.job_title, u.onboarding_completed AS user_onboarding_completed,
     u.created_at AS user_created_at, u.updated_at AS user_updated_at,
     u.last_login_at, u.status AS user_status,
     w.id AS workspace_id, w.name AS workspace_name, w.slug AS workspace_slug,
@@ -64,6 +68,9 @@ function mapContext(row: ContextRow): WorkspaceContext {
       googleName: row.google_name,
       displayName: row.display_name,
       profileImageUrl: row.profile_image_url,
+      googleProfileImageUrl: row.google_profile_image_url,
+      customProfileDriveFileId: row.custom_profile_drive_file_id,
+      customProfileWorkspaceId: row.custom_profile_workspace_id,
       jobTitle: row.job_title,
       onboardingCompleted: row.user_onboarding_completed === 1,
       createdAt: row.user_created_at,
