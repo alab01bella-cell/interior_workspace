@@ -10,7 +10,7 @@ import { formatSeoulDateTime } from "@/lib/consultations/reservation-time";
 import { ReservationEditor, type ReservationSaved } from "./reservation-editor";
 
 const statusFilters: ("전체" | ConsultationStatus)[] = ["전체", "접수", "예약", "완료", "계약"];
-const pageSize = 8;
+const pageSizeOptions = [10, 20, 50] as const;
 
 const formatReceivedAt = (value: string) => {
   const parts = new Intl.DateTimeFormat("en-CA", { year:"2-digit", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", hourCycle:"h23", timeZone:"Asia/Seoul" }).formatToParts(new Date(value));
@@ -18,10 +18,15 @@ const formatReceivedAt = (value: string) => {
   return `${part("year")}.${part("month")}.${part("day")} ${part("hour")}:${part("minute")}`;
 };
 
+const receivedDateKey = (value: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
+
 export function ConsultationsPage({ consultations: initialConsultations, initialStatus = "전체" }: { consultations: Consultation[]; initialStatus?: "전체" | ConsultationStatus }) {
   const [consultations, setConsultations] = useState(initialConsultations);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"전체" | ConsultationStatus>(initialStatus);
+  const [receivedFrom, setReceivedFrom] = useState("");
+  const [receivedTo, setReceivedTo] = useState("");
+  const [pageSize, setPageSize] = useState<(typeof pageSizeOptions)[number]>(10);
   const [page, setPage] = useState(1);
   const [reservationTarget, setReservationTarget] = useState<Consultation | null>(null);
   const [toast, setToast] = useState("");
@@ -32,8 +37,10 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
     const normalizedQuery = query.trim().toLowerCase();
     return consultations
       .filter((item) => statusFilter === "전체" || item.status === statusFilter)
+      .filter((item) => !receivedFrom || receivedDateKey(item.receivedAt) >= receivedFrom)
+      .filter((item) => !receivedTo || receivedDateKey(item.receivedAt) <= receivedTo)
       .filter((item) => !normalizedQuery || `${item.customerName} ${item.region}`.toLowerCase().includes(normalizedQuery));
-  }, [consultations, query, statusFilter]);
+  }, [consultations, query, statusFilter, receivedFrom, receivedTo]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -80,6 +87,13 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
         <div className="status-filters" aria-label="상태 필터">
           {statusFilters.map((status) => <button className={statusFilter === status ? "is-active" : ""} key={status} onClick={() => changeFilter(status)} type="button">{status}</button>)}
         </div>
+        <div className="received-date-filter" aria-label="접수일 필터">
+          <span>접수일</span>
+          <input type="date" aria-label="접수 시작일" value={receivedFrom} max={receivedTo||undefined} onChange={(event)=>{setReceivedFrom(event.target.value);setPage(1)}} />
+          <i>–</i>
+          <input type="date" aria-label="접수 종료일" value={receivedTo} min={receivedFrom||undefined} onChange={(event)=>{setReceivedTo(event.target.value);setPage(1)}} />
+          {(receivedFrom||receivedTo)&&<button type="button" onClick={()=>{setReceivedFrom("");setReceivedTo("");setPage(1)}}>초기화</button>}
+        </div>
         <span className="sort-label"><SlidersHorizontal /> 최신순</span>
       </section>
 
@@ -112,7 +126,7 @@ export function ConsultationsPage({ consultations: initialConsultations, initial
         </div>
 
         {pageItems.length === 0 && <div className="consultations-empty">아직 접수된 상담이 없습니다.</div>}
-        <footer className="pagination"><span>{(currentPage - 1) * pageSize + (pageItems.length ? 1 : 0)}–{(currentPage - 1) * pageSize + pageItems.length} / {filtered.length}</span><div><button disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))} aria-label="이전 페이지" type="button"><ChevronLeft /></button>{Array.from({ length: totalPages }, (_, index) => index + 1).map((value) => <button className={currentPage === value ? "is-active" : ""} key={value} onClick={() => setPage(value)} type="button">{value}</button>)}<button disabled={currentPage === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))} aria-label="다음 페이지" type="button"><ChevronRight /></button></div></footer>
+        <footer className="pagination"><div className="page-size"><span>페이지당</span><select value={pageSize} onChange={(event)=>{setPageSize(Number(event.target.value) as (typeof pageSizeOptions)[number]);setPage(1)}}>{pageSizeOptions.map((size)=><option key={size} value={size}>{size}건</option>)}</select></div><span>{(currentPage - 1) * pageSize + (pageItems.length ? 1 : 0)}–{(currentPage - 1) * pageSize + pageItems.length} / {filtered.length}</span><div><button disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))} aria-label="이전 페이지" type="button"><ChevronLeft /></button>{Array.from({ length: totalPages }, (_, index) => index + 1).map((value) => <button className={currentPage === value ? "is-active" : ""} key={value} onClick={() => setPage(value)} type="button">{value}</button>)}<button disabled={currentPage === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))} aria-label="다음 페이지" type="button"><ChevronRight /></button></div></footer>
       </section>
       {reservationTarget&&<ReservationEditor consultation={reservationTarget} open onOpenChange={(open)=>{if(!open)setReservationTarget(null);}} onSaved={reservationSaved} onCancelled={reservationCancelled} showTrigger={false}/>}
       {toast&&<div className="app-toast" role="status">{toast}</div>}

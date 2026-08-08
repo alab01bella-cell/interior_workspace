@@ -279,6 +279,11 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .status-filters button.is-active { color: #fff; background: var(--brand); box-shadow: 0 4px 10px rgba(255, 146, 29, .2); }
 .sort-label { display: flex; align-items: center; gap: 6px; margin-left: auto; color: var(--muted); font-size: 13px; }
 .sort-label svg { width: 16px; }
+.received-date-filter { display: flex; align-items: center; gap: 6px; }
+.received-date-filter > span { color: #74777d; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.received-date-filter input { width: 126px; height: 34px; padding: 0 7px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #55585e; font-size: 11px; }
+.received-date-filter i { color: #aaa; font-size: 11px; font-style: normal; }
+.received-date-filter button { padding: 0 4px; border: 0; background: transparent; color: var(--brand-strong); font-size: 11px; font-weight: 700; cursor: pointer; }
 .consultations-surface { display: flex; min-height: 0; flex: 1; flex-direction: column; margin-top: 14px; overflow: hidden; background: #fff; border: 1px solid #f0f1f2; border-radius: 14px; box-shadow: var(--shadow-card); }
 .consultations-table-wrap { min-width: 0; min-height: 0; flex: 1; overflow-x: hidden; overflow-y: auto; }
 .consultations-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -315,6 +320,8 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .consultations-table select, .consultation-mobile-card select { height: 32px; padding: 0 25px 0 9px; color: #55585e; background: #fff; border: 1px solid #dddfe2; border-radius: 7px; font-size: 13px; cursor: pointer; }
 .pagination { display: flex; min-height: 52px; align-items: center; justify-content: space-between; padding: 8px 14px; border-top: 1px solid var(--line); }
 .pagination > span { color: var(--muted); font-size: 12px; }
+.page-size { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
+.page-size select { height: 30px; padding: 0 24px 0 8px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: #60636a; font: inherit; }
 .pagination > div { display: flex; gap: 4px; }
 .pagination button { display: grid; width: 30px; height: 30px; place-items: center; color: #707279; background: #fff; border: 1px solid #e7e8ea; border-radius: 7px; font-size: 12px; cursor: pointer; }
 .pagination button svg { width: 14px; }
@@ -518,6 +525,8 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .consultation-toolbar { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
   .consultation-search { grid-column: 1 / -1; width: 100%; }
   .status-filters { grid-column: 1 / -1; overflow-x: auto; }
+  .received-date-filter { grid-column: 1 / -1; flex-wrap: wrap; }
+  .received-date-filter input { min-width: 0; flex: 1; }
   .status-filters button { flex: 1; }
   .consultations-surface { overflow: visible; background: transparent; border: 0; box-shadow: none; }
   .consultations-table-wrap { display: none; }
@@ -534,6 +543,8 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .consultation-mobile-card footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
   .pagination { margin-top: 12px; background: #fff; border: 1px solid var(--line); border-radius: 11px; }
   .pagination > span { display: none; }
+  .pagination { flex-wrap: wrap; gap: 8px; }
+  .page-size { width: 100%; justify-content: center; }
   .pagination > div { width: 100%; justify-content: center; }
   .modal-backdrop { align-items: end; padding: 0; }
   .consultation-modal { width: 100%; max-height: 88vh; padding: 21px 18px; border-radius: 20px 20px 0 0; }
