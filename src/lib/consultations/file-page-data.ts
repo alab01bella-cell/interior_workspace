@@ -8,6 +8,7 @@ export async function getFilePageData(workspaceId:string,requested?:string){
   const records=selected?await listConsultationFiles(workspaceId,selected.id):[];
   return {
     consultationId:selected?.id??null,
+    quoteFileId:selected?.quoteFileId??null,
     selectedCustomer:selected?{customerName:selected.clientName,region:selected.region,area:selected.area}:null,
     choices,
     initialFiles:records.map(({id,fileCategory,originalFileName,mimeType,fileSize,createdAt,driveFileId})=>({id,fileCategory,originalFileName,mimeType,fileSize,createdAt,driveFileId})),
