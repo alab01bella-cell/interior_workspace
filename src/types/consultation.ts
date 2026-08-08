@@ -32,6 +32,8 @@ export interface Consultation {
   scheduledAt?: string | null;
   scheduledNote?: string | null;
   statusUpdatedAt?: string | null;
+  assignedUserId?: string | null;
+  assignedUserName?: string | null;
 }
 
 export interface StoredConsultation extends Consultation {

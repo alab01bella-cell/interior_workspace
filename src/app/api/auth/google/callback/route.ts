@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthConfig } from "@/lib/auth/config";
 import { clearOAuthCookie, OAUTH_COOKIE, setSession, unseal } from "@/lib/auth/session";
 import { findOrCreateGoogleUser, toAuthUser } from "@/lib/auth/user-repository";
+import { acceptInvitation } from "@/lib/workspaces/team-repository";
 
 export const runtime = "nodejs";
 
@@ -12,6 +13,7 @@ interface OAuthTransaction {
   state: string;
   nonce: string;
   codeVerifier: string;
+  inviteToken?: string|null;
 }
 
 function errorRedirect(baseUrl: string, error: string) {
@@ -65,7 +67,8 @@ export async function GET(request: NextRequest) {
       googleName: payload.name,
       profileImageUrl: typeof payload.picture === "string" ? payload.picture : null,
     });
-    const destination = user.onboardingCompleted ? "/dashboard" : "/onboarding";
+    let destination = user.onboardingCompleted ? "/dashboard" : "/onboarding";
+    if(transaction.inviteToken){const accepted=await acceptInvitation({token:transaction.inviteToken,userId:user.id,email:user.email});destination=accepted.ok?"/dashboard":`/invite/${encodeURIComponent(transaction.inviteToken)}?error=${accepted.error}`;}
     const response = NextResponse.redirect(`${config.baseUrl}${destination}`);
     await setSession(response, toAuthUser(user));
     clearOAuthCookie(response);

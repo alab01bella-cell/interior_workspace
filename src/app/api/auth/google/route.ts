@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getAuthConfig } from "@/lib/auth/config";
 import { OAUTH_MAX_AGE, seal, setOAuthCookie } from "@/lib/auth/session";
 
@@ -15,12 +15,14 @@ function base64Url(bytes: Uint8Array) {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-export async function GET() {
+export async function GET(request:NextRequest) {
   try {
     const config = getAuthConfig();
     const state = randomValue();
     const nonce = randomValue();
     const codeVerifier = randomValue(48);
+    const inviteToken=request.nextUrl.searchParams.get("invite");
+    const safeInvite=inviteToken&&/^[A-Za-z0-9_-]{43}$/.test(inviteToken)?inviteToken:null;
     const challenge = base64Url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(codeVerifier))));
     const redirectUri = `${config.baseUrl}/api/auth/google/callback`;
     const authorizationUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
@@ -36,7 +38,7 @@ export async function GET() {
     }).toString();
 
     const response = NextResponse.redirect(authorizationUrl);
-    setOAuthCookie(response, await seal({ state, nonce, codeVerifier }, OAUTH_MAX_AGE));
+    setOAuthCookie(response, await seal({ state, nonce, codeVerifier, inviteToken:safeInvite }, OAUTH_MAX_AGE));
     return response;
   } catch {
     return NextResponse.redirect(new URL("/login?error=configuration", process.env.AUTH_URL ?? "http://localhost:3000"));

@@ -8,6 +8,7 @@ import {
   ListFilter,
   LogOut,
   Settings,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -29,6 +30,7 @@ export const primaryNavigation: readonly NavigationItem[] = [
 
 export const utilityNavigation: readonly NavigationItem[] = [
   { label: "체크리스트", href: "#checklist", icon: ClipboardCheck },
+  { label: "팀 관리", href: "/settings/team", icon: Users },
   { label: "설정", href: "/settings/integrations", icon: Settings },
   { label: "logout", href: "#", icon: LogOut },
 ];

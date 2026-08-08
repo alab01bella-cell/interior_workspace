@@ -1,7 +1,7 @@
 export type UserStatus = "ACTIVE" | "SUSPENDED" | "DELETED";
 export type WorkspaceStatus = "ACTIVE" | "SUSPENDED" | "DELETED";
 export type MembershipStatus = "ACTIVE" | "INACTIVE" | "REMOVED";
-export type WorkspaceRole = "OWNER" | "ADMIN" | "MEMBER";
+export type WorkspaceRole = "OWNER" | "MEMBER";
 export type WorkspacePlan = "FREE" | "PRO" | "BUSINESS";
 export type GoogleDriveConnectionStatus = "DISCONNECTED" | "CONNECTED" | "ERROR";
 export type DriveConnectionStatus = "CONNECTED" | "REVOKED" | "ERROR";
