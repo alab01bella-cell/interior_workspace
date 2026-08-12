@@ -1,0 +1,3 @@
+import Link from "next/link";import { PhoneCall } from "lucide-react";import { Card } from "@/components/ui/card";
+export interface TodayFollowup{id:string;customerName:string;nextContactAt:string;latestNote:string|null}
+export function TodayFollowupsCard({items}:{items:TodayFollowup[]}){if(!items.length)return null;return <Card className="today-followups-card"><div className="panel-title"><PhoneCall/><h2>오늘 후속관리 <strong>{items.length}건</strong></h2></div><div>{items.slice(0,5).map((item)=><Link href={`/quotes?followup=${encodeURIComponent(item.id)}`} key={item.id}><strong>{item.customerName}</strong><time>{item.nextContactAt.slice(11,16)}</time><span>{item.latestNote??"견적 검토 결과 확인"}</span></Link>)}</div></Card>}

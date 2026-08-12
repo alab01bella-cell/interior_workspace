@@ -1,9 +1,10 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthConfig } from "@/lib/auth/config";
-import { clearOAuthCookie, OAUTH_COOKIE, setSession, unseal } from "@/lib/auth/session";
-import { findOrCreateGoogleUser, toAuthUser } from "@/lib/auth/user-repository";
+import { clearOAuthCookie, clearSession, OAUTH_COOKIE, setSession, unseal } from "@/lib/auth/session";
+import { findOrCreateGoogleUser, findUserByGoogleSub, hasActiveWorkspaceMembership, toAuthUser } from "@/lib/auth/user-repository";
 import { acceptInvitation } from "@/lib/workspaces/team-repository";
+import { canCreateWorkspace } from "@/lib/auth/workspace-creation-eligibility";
 
 export const runtime = "nodejs";
 
@@ -61,14 +62,22 @@ export async function GET(request: NextRequest) {
       throw new Error("invalid_profile");
     }
 
-    const user = await findOrCreateGoogleUser({
+    const googleProfile={
       googleSub: payload.sub,
       email: payload.email,
       googleName: payload.name,
       profileImageUrl: typeof payload.picture === "string" ? payload.picture : null,
-    });
-    let destination = user.onboardingCompleted ? "/dashboard" : "/onboarding";
-    if(transaction.inviteToken){const accepted=await acceptInvitation({token:transaction.inviteToken,userId:user.id,email:user.email});destination=accepted.ok?"/dashboard":`/invite/${encodeURIComponent(transaction.inviteToken)}?error=${accepted.error}`;}
+    };
+    const existing=await findUserByGoogleSub(payload.sub);
+    const registered=Boolean(existing&&await hasActiveWorkspaceMembership(existing.id));
+    const ownerEligibility=await canCreateWorkspace(payload.email);
+    if(!transaction.inviteToken&&!registered&&!ownerEligibility.allowed){
+      const response=NextResponse.redirect(`${config.baseUrl}/login?error=registration_required`);
+      clearSession(response);clearOAuthCookie(response);return response;
+    }
+    const user=await findOrCreateGoogleUser(googleProfile);
+    let destination = registered?user.profileCompleted?"/dashboard":"/profile/setup":"/onboarding";
+    if(transaction.inviteToken){const accepted=await acceptInvitation({token:transaction.inviteToken,userId:user.id,email:user.email});destination=accepted.ok?user.profileCompleted?"/dashboard":"/profile/setup":`/invite/${encodeURIComponent(transaction.inviteToken)}?error=${accepted.error}`;}
     const response = NextResponse.redirect(`${config.baseUrl}${destination}`);
     await setSession(response, toAuthUser(user));
     clearOAuthCookie(response);

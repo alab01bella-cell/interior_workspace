@@ -1,6 +1,8 @@
 import { getDb } from "@/lib/db/client";
 import type { User, Workspace, WorkspaceContext, WorkspaceIdentity, WorkspaceMembership } from "@/types/workspace";
 import { getServiceDisplayName } from "@/lib/auth/user-repository";
+import { canCreateWorkspace,completeWorkspaceCreationEligibility } from "@/lib/auth/workspace-creation-eligibility";
+import { isSuperAdminEmail } from "@/lib/admin/super-admin";
 
 interface ContextRow {
   user_id: string;
@@ -14,6 +16,7 @@ interface ContextRow {
   custom_profile_workspace_id: string | null;
   job_title: string | null;
   user_onboarding_completed: number;
+  profile_completed: number;
   user_created_at: string;
   user_updated_at: string;
   last_login_at: string;
@@ -42,6 +45,7 @@ const contextQuery = `
     u.id AS user_id, u.google_sub, u.email, u.google_name, u.display_name,
     u.profile_image_url, u.google_profile_image_url, u.custom_profile_drive_file_id,
     u.custom_profile_workspace_id, u.job_title, u.onboarding_completed AS user_onboarding_completed,
+    u.profile_completed,
     u.created_at AS user_created_at, u.updated_at AS user_updated_at,
     u.last_login_at, u.status AS user_status,
     w.id AS workspace_id, w.name AS workspace_name, w.slug AS workspace_slug,
@@ -73,6 +77,7 @@ function mapContext(row: ContextRow): WorkspaceContext {
       customProfileWorkspaceId: row.custom_profile_workspace_id,
       jobTitle: row.job_title,
       onboardingCompleted: row.user_onboarding_completed === 1,
+      profileCompleted: row.profile_completed === 1,
       createdAt: row.user_created_at,
       updatedAt: row.user_updated_at,
       lastLoginAt: row.last_login_at,
@@ -117,6 +122,8 @@ export function toWorkspaceIdentity(context: WorkspaceContext): WorkspaceIdentit
     jobTitle: context.user.jobTitle,
     workspaceName: context.workspace.name,
     consultationChecklistUrl: context.workspace.consultationShortCode?`/c/${context.workspace.consultationShortCode}`:null,
+    role: context.membership.role,
+    isSuperAdmin: isSuperAdminEmail(context.user.email),
   };
 }
 
@@ -196,10 +203,10 @@ export interface CompleteOnboardingInput {
 export async function completeOnboarding(input: CompleteOnboardingInput): Promise<WorkspaceContext> {
   const db = await getDb();
   const current = await db.prepare(`
-    SELECT u.onboarding_completed,
+    SELECT u.onboarding_completed,u.email,
       EXISTS(SELECT 1 FROM workspace_members wm WHERE wm.user_id = u.id AND wm.status = 'ACTIVE') AS has_membership
     FROM users u WHERE u.id = ? AND u.status = 'ACTIVE'
-  `).bind(input.userId).first<{ onboarding_completed: number; has_membership: number }>();
+  `).bind(input.userId).first<{ onboarding_completed: number; email:string;has_membership: number }>();
 
   if (!current) throw new Error("user_unavailable");
   if (current.onboarding_completed === 1 || current.has_membership === 1) {
@@ -207,6 +214,8 @@ export async function completeOnboarding(input: CompleteOnboardingInput): Promis
     if (existing) return existing;
     throw new Error("invalid_onboarding_state");
   }
+  const eligibility=await canCreateWorkspace(current.email);
+  if(!eligibility.allowed)throw new Error("owner_signup_not_allowed");
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const workspaceId = crypto.randomUUID();
@@ -224,12 +233,13 @@ export async function completeOnboarding(input: CompleteOnboardingInput): Promis
           VALUES (?, ?, ?, 'OWNER', 'ACTIVE')
         `).bind(membershipId, workspaceId, input.userId),
         db.prepare(`
-          UPDATE users SET display_name = ?, job_title = ?, onboarding_completed = 1, updated_at = datetime('now')
+          UPDATE users SET display_name = ?, job_title = ?, onboarding_completed = 1, profile_completed = 1, updated_at = datetime('now')
           WHERE id = ? AND status = 'ACTIVE' AND onboarding_completed = 0
         `).bind(input.displayName, input.jobTitle, input.userId),
       ]);
       const context = await findActiveWorkspaceContext(input.userId);
       if (!context) throw new Error("workspace_context_missing");
+      await completeWorkspaceCreationEligibility({email:current.email,userId:input.userId,workspaceId:context.workspace.id,source:eligibility.source});
       return context;
     } catch (error) {
       if (error instanceof Error && error.message.includes("workspaces.slug") && attempt < 4) continue;

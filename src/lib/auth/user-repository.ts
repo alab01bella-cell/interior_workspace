@@ -14,6 +14,7 @@ interface UserRow {
   custom_profile_workspace_id: string | null;
   job_title: string | null;
   onboarding_completed: number;
+  profile_completed: number;
   created_at: string;
   updated_at: string;
   last_login_at: string;
@@ -40,6 +41,7 @@ function mapUser(row: UserRow): User {
     customProfileWorkspaceId: row.custom_profile_workspace_id,
     jobTitle: row.job_title,
     onboardingCompleted: row.onboarding_completed === 1,
+    profileCompleted: row.profile_completed === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     lastLoginAt: row.last_login_at,
@@ -86,6 +88,16 @@ export async function findUserById(id: string): Promise<User | null> {
   return row ? mapUser(row) : null;
 }
 
+export async function findUserByGoogleSub(googleSub:string):Promise<User|null>{
+  const row=await (await getDb()).prepare("SELECT * FROM users WHERE google_sub=? AND status='ACTIVE' LIMIT 1").bind(googleSub).first<UserRow>();
+  return row?mapUser(row):null;
+}
+
+export async function hasActiveWorkspaceMembership(userId:string):Promise<boolean>{
+  const row=await (await getDb()).prepare(`SELECT 1 AS found FROM workspace_members wm JOIN workspaces w ON w.id=wm.workspace_id AND w.status='ACTIVE' WHERE wm.user_id=? AND wm.status='ACTIVE' LIMIT 1`).bind(userId).first<{found:number}>();
+  return Boolean(row);
+}
+
 export async function setCustomProfileImage(input:{userId:string;workspaceId:string;driveFileId:string}):Promise<void>{
   await (await getDb()).prepare(`UPDATE users SET custom_profile_drive_file_id=?,custom_profile_workspace_id=?,profile_image_url=?,updated_at=datetime('now') WHERE id=? AND status='ACTIVE'`).bind(input.driveFileId,input.workspaceId,`/api/profile/avatar?v=${Date.now()}`,input.userId).run();
 }
@@ -95,6 +107,14 @@ export async function resetCustomProfileImage(userId:string):Promise<{driveFileI
   const current=await db.prepare(`SELECT custom_profile_drive_file_id,custom_profile_workspace_id FROM users WHERE id=? AND status='ACTIVE'`).bind(userId).first<{custom_profile_drive_file_id:string|null;custom_profile_workspace_id:string|null}>();
   await db.prepare(`UPDATE users SET custom_profile_drive_file_id=NULL,custom_profile_workspace_id=NULL,profile_image_url=google_profile_image_url,updated_at=datetime('now') WHERE id=? AND status='ACTIVE'`).bind(userId).run();
   return {driveFileId:current?.custom_profile_drive_file_id??null,workspaceId:current?.custom_profile_workspace_id??null};
+}
+
+export async function updateUserProfile(input:{userId:string;displayName:string;jobTitle:string;complete:boolean}):Promise<User>{
+  const db=await getDb();
+  await db.prepare(`UPDATE users SET display_name=?,job_title=?,profile_completed=CASE WHEN ?=1 THEN 1 ELSE profile_completed END,updated_at=datetime('now') WHERE id=? AND status='ACTIVE'`).bind(input.displayName,input.jobTitle,input.complete?1:0,input.userId).run();
+  const user=await findUserById(input.userId);
+  if(!user)throw new Error("user_unavailable");
+  return user;
 }
 
 export function getServiceDisplayName(user: Pick<User, "displayName" | "googleName" | "email">): string {

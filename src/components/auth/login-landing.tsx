@@ -5,6 +5,7 @@ const errorMessages: Record<string, string> = {
   invalid_state: "로그인 요청이 만료되었거나 유효하지 않습니다. 다시 시도해주세요.",
   callback_failed: "Google 로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.",
   configuration: "로그인 설정이 완료되지 않았습니다. 관리자에게 문의해주세요.",
+  registration_required: "등록되지 않은 계정입니다. 관리자에게 가입 권한 또는 업체 초대를 요청해주세요.",
 };
 
 function GoogleMark() {

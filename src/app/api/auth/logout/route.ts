@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthConfig } from "@/lib/auth/config";
-import { clearSession } from "@/lib/auth/session";
+import { clearOAuthCookie, clearSession } from "@/lib/auth/session";
 
 export async function POST(request: NextRequest) {
   const { baseUrl } = getAuthConfig();
@@ -10,5 +10,6 @@ export async function POST(request: NextRequest) {
   }
   const response = NextResponse.redirect(`${baseUrl}/login`, 303);
   clearSession(response);
+  clearOAuthCookie(response);
   return response;
 }

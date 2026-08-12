@@ -42,6 +42,7 @@ export interface Consultation {
   quoteSentAt: string | null;
   quoteNote: string | null;
   quoteFileId: string | null;
+  quoteFileName?: string | null;
   contractOutcome: ContractOutcome;
   contractDecidedAt: string | null;
   lostReason: LostReason | null;

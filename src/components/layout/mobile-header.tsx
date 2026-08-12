@@ -3,62 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
-import { primaryNavigation, utilityNavigation } from "@/config/navigation";
+import { ChevronDown,LogOut,Menu,Settings,UserCog,Users,Wrench,X } from "lucide-react";
+import { managementNavigation,primaryNavigation } from "@/config/navigation";
 import type { WorkspaceIdentity } from "@/types/workspace";
 import { AvatarMark } from "./avatar-mark";
 
-export function MobileHeader({ identity }: { identity: WorkspaceIdentity }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const pathname = usePathname();
-
-  return (
-    <>
-      <header className="mobile-header">
-        <div className="mobile-brand">
-          <strong>Interior</strong>
-          <span>Workspace</span>
-        </div>
-        <button
-          className="icon-button icon-button--light"
-          aria-expanded={isOpen}
-          aria-label={isOpen ? "메뉴 닫기" : "메뉴 열기"}
-          onClick={() => setIsOpen((current) => !current)}
-          type="button"
-        >
-          {isOpen ? <X /> : <Menu />}
-        </button>
-      </header>
-      {isOpen && (
-        <div className="mobile-menu-backdrop" onClick={() => setIsOpen(false)}>
-          <nav className="mobile-menu" aria-label="모바일 메뉴" onClick={(event) => event.stopPropagation()}>
-            <div className="mobile-menu-profile">
-              <AvatarMark compact imageUrl={identity.profileImageUrl ?? undefined} />
-              <div><strong>{identity.workspaceName}</strong><span>{identity.displayName} · {identity.email}</span></div>
-            </div>
-            {[...primaryNavigation, ...utilityNavigation].map(({ label, href, icon: Icon }) => {
-              const active = href !== "#" && pathname.startsWith(href);
-              if (label === "logout") return (
-                <form action="/api/auth/logout" key={label} method="post">
-                  <button className="mobile-menu-link mobile-menu-link--button" type="submit"><Icon aria-hidden="true" /><span>로그아웃</span></button>
-                </form>
-              );
-              if(label==="체크리스트")return <Link className="mobile-menu-link" href={identity.consultationChecklistUrl??"/settings/integrations"} key={label} target={identity.consultationChecklistUrl?"_blank":undefined} rel={identity.consultationChecklistUrl?"noreferrer":undefined}><Icon aria-hidden="true"/><span>{label}</span></Link>;
-              return (
-              <Link
-                className={`mobile-menu-link${active ? " is-active" : ""}`}
-                href={href}
-                key={label}
-                onClick={() => setIsOpen(false)}
-              >
-                <Icon aria-hidden="true" />
-                <span>{label}</span>
-              </Link>
-              );
-            })}
-          </nav>
-        </div>
-      )}
-    </>
-  );
-}
+export function MobileHeader({identity}:{identity:WorkspaceIdentity}){const [isOpen,setIsOpen]=useState(false),[settingsOpen,setSettingsOpen]=useState(false),pathname=usePathname(),items=[...primaryNavigation,...managementNavigation.filter((item)=>(!item.ownerOnly||identity.role==="OWNER")&&(!item.superAdminOnly||identity.isSuperAdmin))];return <><header className="mobile-header"><div className="mobile-brand"><strong>Interior</strong><span>Workspace</span></div><button className="icon-button icon-button--light" aria-expanded={isOpen} aria-label={isOpen?"메뉴 닫기":"메뉴 열기"} onClick={()=>setIsOpen((current)=>!current)} type="button">{isOpen?<X/>:<Menu/>}</button></header>{isOpen&&<div className="mobile-menu-backdrop" onClick={()=>setIsOpen(false)}><nav className="mobile-menu" aria-label="모바일 메뉴" onClick={(event)=>event.stopPropagation()}><div className="mobile-menu-profile"><AvatarMark compact imageUrl={identity.profileImageUrl??undefined}/><div><strong>{identity.workspaceName}</strong><span>{identity.displayName}{identity.jobTitle&&` · ${identity.jobTitle}`} · {identity.email}</span></div></div>{items.map(({label,href,icon:Icon})=>{const active=pathname.startsWith(href);return <Link className={`mobile-menu-link${active?" is-active":""}`} href={href} key={label} onClick={()=>setIsOpen(false)}><Icon aria-hidden="true"/><span>{label}</span></Link>})}<button className="mobile-menu-link mobile-settings-trigger" type="button" aria-expanded={settingsOpen} onClick={()=>setSettingsOpen((value)=>!value)}><Settings/><span>설정</span><ChevronDown className={settingsOpen?"is-open":""}/></button>{settingsOpen&&<div className="mobile-settings-menu">{identity.role==="OWNER"&&<Link href="/settings/team" onClick={()=>setIsOpen(false)}><Users/>팀 관리</Link>}<Link href="/settings/profile" onClick={()=>setIsOpen(false)}><UserCog/>프로필 설정</Link><Link href="/settings/integrations" onClick={()=>setIsOpen(false)}><Wrench/>서비스 설정</Link><form action="/api/auth/logout" method="post"><button type="submit"><LogOut/>로그아웃</button></form></div>}</nav></div>}</>}

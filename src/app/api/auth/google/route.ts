@@ -35,6 +35,7 @@ export async function GET(request:NextRequest) {
       nonce,
       code_challenge: challenge,
       code_challenge_method: "S256",
+      prompt: "select_account",
     }).toString();
 
     const response = NextResponse.redirect(authorizationUrl);

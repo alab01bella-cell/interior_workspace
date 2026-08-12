@@ -1,52 +1,11 @@
 "use client";
 
+import { useEffect,useRef,useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { primaryNavigation, utilityNavigation } from "@/config/navigation";
+import { ChevronRight,LogOut,Settings,UserCog,Users,Wrench } from "lucide-react";
+import { managementNavigation,primaryNavigation } from "@/config/navigation";
 import type { WorkspaceIdentity } from "@/types/workspace";
 import { AvatarMark } from "./avatar-mark";
 
-export function Sidebar({ identity }: { identity: WorkspaceIdentity }) {
-  const pathname = usePathname();
-
-  return (
-    <aside className="sidebar" aria-label="사이드바">
-      <Link className="brand" href="/dashboard" aria-label="Interior Workspace 홈">
-        <strong>Interior</strong>
-        <span>Workspace</span>
-      </Link>
-
-      <div className="sidebar-profile">
-        <AvatarMark imageUrl={identity.profileImageUrl ?? undefined} />
-        <div><strong>{identity.workspaceName}</strong><span>{identity.displayName}</span></div>
-      </div>
-
-      <nav className="sidebar-nav" aria-label="주 메뉴">
-        {primaryNavigation.map(({ label, href, icon: Icon }) => {
-          const active = pathname.startsWith(href);
-          return (
-          <Link
-            className={`sidebar-link${active ? " is-active" : ""}`}
-            href={href}
-            key={label}
-            aria-current={active ? "page" : undefined}
-          >
-            <Icon aria-hidden="true" />
-            <span>{label}</span>
-          </Link>
-          );
-        })}
-      </nav>
-
-      <nav className="sidebar-nav sidebar-nav--utility" aria-label="설정 메뉴">
-        {utilityNavigation.map(({ label, href, icon: Icon }) => label === "logout" ? (
-          <form action="/api/auth/logout" key={label} method="post">
-            <button className="sidebar-link sidebar-link--button" type="submit"><Icon aria-hidden="true" /><span>로그아웃</span></button>
-          </form>
-        ) : label === "체크리스트" ? <Link className="sidebar-link" href={identity.consultationChecklistUrl??"/settings/integrations"} key={label} target={identity.consultationChecklistUrl?"_blank":undefined} rel={identity.consultationChecklistUrl?"noreferrer":undefined}><Icon aria-hidden="true" /><span>{label}</span></Link> : (
-          <Link className="sidebar-link" href={href} key={label}><Icon aria-hidden="true" /><span>{label}</span></Link>
-        ))}
-      </nav>
-    </aside>
-  );
-}
+export function Sidebar({identity}:{identity:WorkspaceIdentity}){const pathname=usePathname(),[settingsOpen,setSettingsOpen]=useState(false),settingsRef=useRef<HTMLDivElement>(null);useEffect(()=>{if(!settingsOpen)return;const close=(event:MouseEvent)=>{if(!settingsRef.current?.contains(event.target as Node))setSettingsOpen(false)},escape=(event:KeyboardEvent)=>{if(event.key==="Escape")setSettingsOpen(false)};document.addEventListener("mousedown",close);document.addEventListener("keydown",escape);return()=>{document.removeEventListener("mousedown",close);document.removeEventListener("keydown",escape)}},[settingsOpen]);const visibleManagement=managementNavigation.filter((item)=>(!item.ownerOnly||identity.role==="OWNER")&&(!item.superAdminOnly||identity.isSuperAdmin));return <aside className="sidebar" aria-label="사이드바"><Link className="brand" href="/dashboard" aria-label="Interior Workspace 홈"><strong>Interior</strong><span>Workspace</span></Link><div className="sidebar-profile"><AvatarMark imageUrl={identity.profileImageUrl??undefined}/><div><strong>{identity.workspaceName}</strong><span>{identity.displayName}{identity.jobTitle&&` · ${identity.jobTitle}`}</span></div></div><nav className="sidebar-nav" aria-label="업무 메뉴">{primaryNavigation.map(({label,href,icon:Icon})=>{const active=pathname.startsWith(href);return <Link className={`sidebar-link${active?" is-active":""}`} href={href} key={label} aria-current={active?"page":undefined}><Icon aria-hidden="true"/><span>{label}</span></Link>})}</nav><div className="sidebar-bottom">{visibleManagement.length>0&&<nav className="sidebar-management" aria-label="관리 메뉴">{visibleManagement.map(({label,href,icon:Icon})=>{const active=pathname.startsWith(href);return <Link className={`sidebar-link${active?" is-active":""}`} href={href} key={label}><Icon aria-hidden="true"/><span>{label}</span></Link>})}</nav>}<div className="sidebar-settings" ref={settingsRef}><button className={`sidebar-link sidebar-settings-trigger${settingsOpen?" is-open":""}`} type="button" aria-expanded={settingsOpen} aria-haspopup="menu" onClick={()=>setSettingsOpen((value)=>!value)}><Settings aria-hidden="true"/><span>설정</span><ChevronRight className="sidebar-settings-arrow" aria-hidden="true"/></button>{settingsOpen&&<div className="settings-flyout" role="menu">{identity.role==="OWNER"&&<Link href="/settings/team" role="menuitem" onClick={()=>setSettingsOpen(false)}><Users/>팀 관리</Link>}<Link href="/settings/profile" role="menuitem" onClick={()=>setSettingsOpen(false)}><UserCog/>프로필 설정</Link><Link href="/settings/integrations" role="menuitem" onClick={()=>setSettingsOpen(false)}><Wrench/>서비스 설정</Link><form action="/api/auth/logout" method="post"><button type="submit" role="menuitem"><LogOut/>로그아웃</button></form></div>}</div></div></aside>}

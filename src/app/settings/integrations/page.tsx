@@ -5,6 +5,7 @@ import { PublicConsultationLink } from "@/components/integrations/public-consult
 import { requireWorkspace } from "@/lib/auth/require-user";
 import { findPublicDriveConnection } from "@/lib/google/drive-connection-repository";
 import { ensureConsultationShortCode, toWorkspaceIdentity } from "@/lib/workspaces/workspace-repository";
+import { headers } from "next/headers";
 
 interface PageProps {
   searchParams: Promise<{ result?: string; error?: string; warning?: string; setup?: string }>;
@@ -24,14 +25,15 @@ export default async function IntegrationsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const isOwner = context.membership.role === "OWNER";
   const isConnected = connection?.connectionStatus === "CONNECTED";
-  const consultationShortCode=isOwner?await ensureConsultationShortCode(context.workspace.id):null;
+  const consultationShortCode=context.workspace.consultationShortCode??(isOwner?await ensureConsultationShortCode(context.workspace.id):null);
+  const requestHeaders=await headers(),host=requestHeaders.get("x-forwarded-host")??requestHeaders.get("host")??"",protocol=requestHeaders.get("x-forwarded-proto")??"https",origin=host?`${protocol}://${host}`:"";
 
   return (
     <AppShell identity={toWorkspaceIdentity(context)}>
       <section className="integrations-page">
         <header className="integrations-heading">
           <p className="eyebrow">WORKSPACE SETTINGS</p>
-          <h1>{params.setup === "storage" ? "저장공간 설정" : "연동 관리"}</h1>
+          <h1>{params.setup === "storage" ? "저장공간 설정" : "서비스 설정"}</h1>
           <span>{params.setup === "storage" ? "Workspace가 준비되었습니다. 상담 자료를 저장할 공간을 선택해주세요." : "업체 Workspace에서 사용하는 외부 서비스를 관리합니다."}</span>
         </header>
 
@@ -96,7 +98,7 @@ export default async function IntegrationsPage({ searchParams }: PageProps) {
             </div>
           </div>
         </article>
-        {consultationShortCode&&<article className="integration-card"><div className="integration-body"><h2>고객 상담 접수 링크</h2><p className="integration-description">고객에게 전달할 로그인 없는 실제 상담 접수 URL입니다.</p><PublicConsultationLink path={`/c/${consultationShortCode}`}/></div></article>}
+        {consultationShortCode&&<article className="integration-card"><div className="integration-body"><h2>상담 접수 링크</h2><p className="integration-description">고객에게 전달할 로그인 없는 실제 상담 접수 URL입니다.</p><PublicConsultationLink path={`/c/${consultationShortCode}`} origin={origin}/></div></article>}
       </section>
     </AppShell>
   );

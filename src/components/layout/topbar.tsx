@@ -1,7 +1,8 @@
-import { Search, UserPlus } from "lucide-react";
+import { Search } from "lucide-react";
 import type { WorkspaceIdentity } from "@/types/workspace";
 import { AvatarMark } from "./avatar-mark";
 import { ConsultationNotifications } from "./consultation-notifications";
+import { ConsultationLinkCopyButton } from "@/components/integrations/consultation-link-copy-button";
 
 export function Topbar({ identity }: { identity: WorkspaceIdentity }) {
   return (
@@ -12,9 +13,7 @@ export function Topbar({ identity }: { identity: WorkspaceIdentity }) {
       </label>
 
       <div className="topbar-actions">
-        <button className="icon-button" aria-label="사용자 추가" type="button">
-          <UserPlus />
-        </button>
+        <ConsultationLinkCopyButton path={identity.consultationChecklistUrl}/>
         <ConsultationNotifications />
         <div className="topbar-profile">
           <AvatarMark compact imageUrl={identity.profileImageUrl ?? undefined} />

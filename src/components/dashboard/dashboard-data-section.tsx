@@ -5,6 +5,7 @@ import { CalendarCard } from "./calendar-card";
 import { ScheduleCard } from "./schedule-card";
 import { StatCard } from "./stat-card";
 import { TodoCard } from "./todo-card";
+import { TodayFollowupsCard,type TodayFollowup } from "./today-followups-card";
 
 const statMeta = [
   { label: "접수" as const, icon: FilePenLine, featured: true },
@@ -24,10 +25,12 @@ export function DashboardDataSection({
   consultations,
   todos,
   demo = false,
+  todayFollowups = [],
 }: {
   consultations: Consultation[];
   todos: TodoItem[];
   demo?: boolean;
+  todayFollowups?: TodayFollowup[];
 }) {
   const counts = statusCounts(consultations);
   const todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year:"numeric",month:"2-digit",day:"2-digit" }).format(new Date());
@@ -42,6 +45,7 @@ export function DashboardDataSection({
       <section className="dashboard-grid">
         <div className="dashboard-left-column">
           <ScheduleCard consultations={today} detailLinksEnabled={!demo} />
+          <TodayFollowupsCard items={todayFollowups}/>
           <TodoCard initialItems={todos} demo={demo}/>
         </div>
         <CalendarCard consultations={demo?consultations:scheduled} demo={demo} />

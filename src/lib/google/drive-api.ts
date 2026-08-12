@@ -76,6 +76,15 @@ export async function uploadDriveFile(accessToken:string,input:{name:string;pare
   const file=await response.json() as {id?:string;size?:string};const uploadedSize=Number(file.size);if(!file.id||!Number.isFinite(uploadedSize)||uploadedSize!==payload.byteLength)throw new Error("drive_upload_size_mismatch");return {id:file.id,size:uploadedSize};
 }
 
+export async function updateDriveFile(accessToken:string,input:{fileId:string;name:string;mimeType:string;bytes:ArrayBuffer|Uint8Array}):Promise<{id:string;size:number}> {
+  const boundary=`iw_${crypto.randomUUID().replace(/-/g,"")}`,encoder=new TextEncoder();
+  const payload=input.bytes instanceof ArrayBuffer?input.bytes:new Uint8Array(input.bytes).buffer;
+  const body=new Blob([encoder.encode(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({name:input.name})}\r\n--${boundary}\r\nContent-Type: ${input.mimeType}\r\n\r\n`),payload,encoder.encode(`\r\n--${boundary}--`)]);
+  const response=await fetch(`${DRIVE_UPLOAD_API}/files/${encodeURIComponent(input.fileId)}?uploadType=multipart&fields=id,size`,{method:"PATCH",headers:{authorization:`Bearer ${accessToken}`,"content-type":`multipart/related; boundary=${boundary}`},body,cache:"no-store",signal:AbortSignal.timeout(60_000)});
+  if(!response.ok)throw new Error(response.status===403?"google_permission_required":"drive_file_update_failed");
+  const file=await response.json() as {id?:string;size?:string};const size=Number(file.size);if(!file.id||size!==payload.byteLength)throw new Error("drive_upload_size_mismatch");return {id:file.id,size};
+}
+
 export async function getDriveFileLink(accessToken:string,fileId:string):Promise<{webViewLink:string;name:string}|null>{
   const response=await driveFetch(accessToken,`/files/${encodeURIComponent(fileId)}?fields=id,name,trashed,webViewLink`);
   if(response.status===404)return null;if(!response.ok)throw new Error("drive_file_check_failed");

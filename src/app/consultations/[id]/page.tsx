@@ -1,59 +1,111 @@
-import { notFound } from "next/navigation";
-import { AppShell } from "@/components/layout/app-shell";
-import { StatusBadge } from "@/components/consultations/status-badge";
-import { requireWorkspace } from "@/lib/auth/require-user";
-import { checklistAnswerSections } from "@/lib/checklist/checklist-data";
-import { findConsultation, listConsultationEvents, toConsultation, type ConsultationEvent } from "@/lib/consultations/consultation-repository";
-import { toWorkspaceIdentity } from "@/lib/workspaces/workspace-repository";
-import { listConsultationFiles } from "@/lib/consultations/consultation-file-repository";
-import { ReservationEditor } from "@/components/consultations/reservation-editor";
-import { ProgressActions } from "@/components/consultations/progress-actions";
-import { formatSeoulDateTime } from "@/lib/consultations/reservation-time";
-import { listActiveTeamMembers } from "@/lib/workspaces/team-repository";
-import { AssigneeSelector } from "@/components/consultations/assignee-selector";
-import { QuoteEditor } from "@/components/consultations/quote-editor";
-import { contractOutcomeLabel,formatWon,lostReasonLabel,quoteStatusLabel } from "@/lib/consultations/quote-display";
-
-const display=(value:unknown)=>Array.isArray(value)?value.join(", "):typeof value==="boolean"?(value?"동의":"미동의"):String(value??"")||"-";
-const eventLabel:Record<ConsultationEvent["eventType"],string>={CONSULTATION_RECEIVED:"상담 접수",RESERVATION_CREATED:"상담 예약",RESERVATION_UPDATED:"상담 일정 변경",RESERVATION_CANCELLED:"예약 취소",STATUS_CHANGED:"상태 변경",ASSIGNEE_CHANGED:"담당자 변경",QUOTE_CREATED:"견적 등록",QUOTE_UPDATED:"견적 수정",QUOTE_SENT:"견적 발송 처리",CONTRACT_OUTCOME_CHANGED:"계약 결과 변경"};
-const statusLabel:Record<string,string>={RECEIVED:"접수",RESERVED:"예약",COMPLETED:"완료",CONTRACTED:"계약"};
-
-export default async function ConsultationDetailRoute({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{driveFile?:string}>}) {
-  const context=await requireWorkspace();
-  const record=await findConsultation(context.workspace.id,(await params).id);
-  if(!record) notFound();
-  const consultation=toConsultation(record);
-  const files=await listConsultationFiles(context.workspace.id,record.id);
-  const events=await listConsultationEvents(context.workspace.id,record.id);
-  const original=files.find(file=>file.fileCategory==="CHECKLIST_ORIGINAL");
-  const quoteFile=files.find(file=>file.id===record.quoteFileId);
-  const members=(await listActiveTeamMembers(context.workspace.id)).map(({userId,name})=>({userId,name}));
-
-  return (
-    <AppShell identity={toWorkspaceIdentity(context)}>
-      <section className="consultation-detail consultation-detail-page">
-        {(await searchParams).driveFile==="missing"&&<p className="file-missing-notice">Drive에서 파일을 찾을 수 없습니다.</p>}
-        <header><div><p className="eyebrow">CONSULTATION</p><h1>{consultation.customerName} 고객님 상담</h1></div><StatusBadge status={consultation.status}/></header>
-        <dl className="detail-summary">
-          <div><dt>상태</dt><dd>{consultation.status}</dd></div>
-          <div><dt>담당자</dt><dd><AssigneeSelector consultationId={record.id} initialUserId={record.assignedUserId} members={members}/></dd></div>
-          <div><dt>상담 일정</dt><dd>{record.scheduledAt?formatSeoulDateTime(record.scheduledAt):"미정"}</dd></div>
-          <div><dt>연락 방법</dt><dd>{record.contactMethod} · {record.contactValue}</dd></div>
-          <div><dt>현장</dt><dd>{consultation.fullAddress} · {record.area}</dd></div>
-          <div><dt>접수일</dt><dd>{new Date(record.submittedAt).toLocaleString("ko-KR")}</dd></div>
-          <div><dt>외부 동기화</dt><dd>{record.externalSyncStatus}</dd></div>
-        </dl>
-        <section className="consultation-schedule"><div><p className="eyebrow">SCHEDULE</p><h2>상담 일정</h2>{record.scheduledAt?<><strong>{formatSeoulDateTime(record.scheduledAt)}</strong>{record.scheduledNote&&<p>{record.scheduledNote}</p>}</>:<p>아직 예약되지 않았습니다.</p>}</div><div className="schedule-actions"><ReservationEditor consultation={consultation}/><ProgressActions consultationId={record.id} status={consultation.status}/></div></section>
-        <section className="consultation-commercial"><div><p className="eyebrow">QUOTE & CONTRACT</p><h2>견적 및 계약</h2></div><dl><div><dt>견적 상태</dt><dd>{quoteStatusLabel[record.quoteStatus]}</dd></div><div><dt>견적 금액</dt><dd>{formatWon(record.quoteAmount)}</dd></div><div><dt>발송일</dt><dd>{record.quoteSentAt?formatSeoulDateTime(record.quoteSentAt):"-"}</dd></div><div><dt>계약 결과</dt><dd>{contractOutcomeLabel[record.contractOutcome]}</dd></div>{record.lostReason&&<div><dt>불성사 사유</dt><dd>{lostReasonLabel[record.lostReason]}{record.lostReasonNote&&<small>{record.lostReasonNote}</small>}</dd></div>}{quoteFile&&<div><dt>견적서</dt><dd><a href={`/api/consultations/${record.id}/files/${quoteFile.id}/open`} target="_blank" rel="noreferrer">{quoteFile.originalFileName}</a></dd></div>}</dl>{(record.status==="COMPLETED"||record.status==="CONTRACTED")&&<QuoteEditor consultation={consultation}/>}</section>
-        <div className="detail-actions">
-          {record.driveFolderId&&<a href={`https://drive.google.com/drive/folders/${encodeURIComponent(record.driveFolderId)}`} target="_blank" rel="noreferrer">고객 폴더 열기</a>}
-          {original&&<a href={`/api/consultations/${record.id}/files/${original.id}/open`} target="_blank" rel="noreferrer">인쇄용 원본 PDF</a>}
-          {context.membership.role==="OWNER"&&<form action={`/api/consultations/${encodeURIComponent(record.id)}/sync`} method="post"><button type="submit">{record.externalSyncStatus==="SYNCED"?"원본 PDF 다시 생성":"다시 동기화"}</button></form>}
-        </div>
-        {checklistAnswerSections.map((section)=><article className="detail-section" key={section.title}><h2>{section.title}</h2><dl>{section.fields.filter((field)=>field.kind!=="files").map((field)=><div key={field.name}><dt>{field.label}</dt><dd>{display(record.answers[field.name])}</dd></div>)}</dl></article>)}
-        <section className="consultation-timeline"><h2>진행 기록</h2><ol>{events.map((event)=><li key={event.id}><time>{formatSeoulDateTime(event.createdAt)}</time><div><strong>{eventLabel[event.eventType]}</strong>{typeof event.payload.scheduledAt==="string"&&<span>{formatSeoulDateTime(event.payload.scheduledAt)}</span>}{event.eventType==="STATUS_CHANGED"&&typeof event.payload.to==="string"&&<span>{statusLabel[event.payload.to]??event.payload.to}</span>}{event.eventType==="ASSIGNEE_CHANGED"&&<span>{typeof event.payload.new_user_name==="string"?`담당자가 ${event.payload.new_user_name}님으로 변경되었습니다.`:"담당자가 미지정으로 변경되었습니다."}</span>}{event.eventType.startsWith("QUOTE_")&&typeof event.payload.quote_amount==="number"&&<span>{formatWon(event.payload.quote_amount)}</span>}{event.eventType==="CONTRACT_OUTCOME_CHANGED"&&<span>{event.payload.new_outcome==="CONTRACTED"?"계약 확정":event.payload.lost_reason&&typeof event.payload.lost_reason==="string"?`계약 불성사 · ${lostReasonLabel[event.payload.lost_reason as keyof typeof lostReasonLabel]??event.payload.lost_reason}`:"계약 결과 변경"}</span>}</div></li>)}{!events.some((event)=>event.eventType==="CONSULTATION_RECEIVED")&&<li><time>{formatSeoulDateTime(record.submittedAt)}</time><div><strong>상담 접수</strong></div></li>}</ol></section>
-        <nav className="detail-file-links" aria-label="상담 파일 관리"><a href={`/images?consultation=${encodeURIComponent(record.id)}`}>이미지 {files.filter(file=>file.fileCategory==="FIELD_PHOTO"||file.fileCategory==="BEFORE"||file.fileCategory==="AFTER").length}개 ›</a><a href={`/documents?consultation=${encodeURIComponent(record.id)}`}>파일 {files.filter(file=>file.fileCategory==="DOCUMENT"||file.fileCategory==="CHECKLIST_ORIGINAL").length}개 ›</a></nav>
-      </section>
-    </AppShell>
-  );
-}
+import { notFound } from "next/navigation";import Link from "next/link";import { AppShell } from "@/components/layout/app-shell";import { requireWorkspace } from "@/lib/auth/require-user";import { findConsultation,listConsultationEvents,toConsultation,type ConsultationEvent } from "@/lib/consultations/consultation-repository";import { consultationChecklistPath,consultationFileOpenPath } from "@/lib/consultations/consultation-routes";import { toWorkspaceIdentity } from "@/lib/workspaces/workspace-repository";import { listConsultationFiles } from "@/lib/consultations/consultation-file-repository";import { ReservationEditor } from "@/components/consultations/reservation-editor";import { ProgressActions } from "@/components/consultations/progress-actions";import { formatSeoulDateTime,seoulDateKey } from "@/lib/consultations/reservation-time";import { listActiveTeamMembers } from "@/lib/workspaces/team-repository";import { AssigneeSelector } from "@/components/consultations/assignee-selector";import { QuoteEditor } from "@/components/consultations/quote-editor";import { contractOutcomeLabel,formatManWon,lostReasonLabel } from "@/lib/consultations/quote-display";import { formatConsultationRegion } from "@/lib/consultations/region-display";import { listConsultationNotes } from "@/lib/consultations/consultation-note-repository";import { ConsultationNotes } from "@/components/consultations/consultation-notes";import { getQuoteFollowupHistory } from "@/lib/consultations/quote-followup-repository";import { DetailFollowupCard } from "@/components/consultations/detail-followup-card";
+const value=(input:unknown)=>Array.isArray(input)?input.filter(Boolean).join(", "):String(input??"").trim();
+const budgetLabel=(input:unknown,fallback:number)=>{const raw=value(input).replace(/,/g,"");
+return /^\d+$/.test(raw)?`${Number(raw).toLocaleString("ko-KR")}만원`:value(input)||`${fallback.toLocaleString("ko-KR")}만원`};
+const eventLabel:Record<ConsultationEvent["eventType"],string>={CONSULTATION_RECEIVED:"상담 접수",RESERVATION_CREATED:"예약 등록",RESERVATION_UPDATED:"예약 변경",RESERVATION_CANCELLED:"예약 취소",STATUS_CHANGED:"상담 상태 변경",ASSIGNEE_CHANGED:"담당자 변경",QUOTE_CREATED:"견적 등록",QUOTE_UPDATED:"견적 수정",QUOTE_SENT:"견적 발송",CONTRACT_OUTCOME_CHANGED:"계약 결과 변경"};
+const stageDate=(events:ConsultationEvent[],types:ConsultationEvent["eventType"][])=>events.filter((event)=>types.includes(event.eventType)).at(-1)?.createdAt;
+export default async function ConsultationDetailRoute({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{driveFile?:string}>}){const context=await requireWorkspace(),record=await findConsultation(context.workspace.id,(await params).id);if(!record)notFound();
+const consultation=toConsultation(record),files=await listConsultationFiles(context.workspace.id,record.id),events=(await listConsultationEvents(context.workspace.id,record.id)).slice().reverse(),members=(await listActiveTeamMembers(context.workspace.id)).map(({userId,name})=>({userId,name})),memberNames=new Map(members.map((member)=>[member.userId,member.name])),quoteFile=files.find((file)=>file.id===record.quoteFileId),followup=await getQuoteFollowupHistory(context.workspace.id,record.id),notes=await listConsultationNotes(context.workspace.id,record.id),images={FIELD_PHOTO:files.filter((file)=>file.fileCategory==="FIELD_PHOTO").length,BEFORE:files.filter((file)=>file.fileCategory==="BEFORE").length,AFTER:files.filter((file)=>file.fileCategory==="AFTER").length},docs=files.filter((file)=>file.fileCategory==="DOCUMENT"||file.fileCategory==="CHECKLIST_ORIGINAL").slice(0,4),completed=record.status==="COMPLETED"||record.status==="CONTRACTED"||record.quoteStatus!=="NOT_CREATED",resultDone=record.contractOutcome!=="PENDING",stages=[{label:"접수",done:true,date:record.submittedAt},{label:"예약",done:Boolean(record.scheduledAt||stageDate(events,["RESERVATION_CREATED","RESERVATION_UPDATED"])),date:stageDate(events,["RESERVATION_CREATED","RESERVATION_UPDATED"])},{label:"상담완료",done:completed,date:stageDate(events,["STATUS_CHANGED"])},{label:"견적발송",done:record.quoteStatus==="SENT",date:record.quoteSentAt},{label:"계약결과",done:resultDone,date:record.contractDecidedAt}];
+const priorities=(Array.isArray(record.answers.priority)?record.answers.priority:[]).map(String).filter(Boolean),important=value(record.answers.nonNegotiable),styles=[value(record.answers.styles),value(record.answers.colorTone)].filter(Boolean).join(" · ");
+return <AppShell identity={toWorkspaceIdentity(context)}>
+<main className="customer-detail-page">{(await searchParams).driveFile==="missing"&&<p className="file-missing-notice">Drive에서 파일을 찾을 수 없습니다.</p>}<header className="customer-detail-header">
+<div>
+<p>CONSULTATION</p>
+<div>
+<h1>{record.clientName} 고객님</h1>
+<span className={`customer-outcome outcome-${record.contractOutcome.toLowerCase()}`}>{record.contractOutcome==="PENDING"?consultation.status:contractOutcomeLabel[record.contractOutcome]}</span>
+</div>
+<strong>{formatConsultationRegion(record.region)} · {record.area}{consultation.housingType&&` · ${consultation.housingType}`}</strong>
+<small>{record.contactValue} · 상담희망일 {record.preferredDate}{record.assignedUserName&&` · 담당 ${record.assignedUserName}`}</small>
+</div>
+<AssigneeSelector consultationId={record.id} initialUserId={record.assignedUserId} members={members}/>
+</header>
+<section className="customer-progress">{stages.map((stage,index)=>
+<div className={stage.done?"is-done":""} key={stage.label}>
+<i>{stage.done?"✓":index+1}</i>
+<span>{stage.label}</span>{stage.date&&<small>{seoulDateKey(stage.date).slice(5).replace("-",".")}</small>}</div>)}</section>
+<div className="customer-detail-grid">
+<div className="customer-detail-column customer-detail-left">
+<section className="customer-card detail-info-card">
+<header>
+<h2>고객 정보</h2>
+</header>
+<dl>{[["공간 유형",consultation.housingType],["평수",record.area],["현재 상태",value(record.answers.currentStatus)],["공사 목적",value(record.answers.renovationReason)],["예산",budgetLabel(record.answers.budget,record.budgetAmount)],["입주 예정",value(record.answers.moveInDate)],["연락 방법",record.contactMethod]].filter(([,v])=>v).map(([label,data])=>
+<div key={label}>
+<dt>{label}</dt>
+<dd>{data}</dd>
+</div>)}</dl><Link href={consultationChecklistPath(record.id)}>고객이 작성한 체크리스트 전체 보기 →</Link></section>
+<section className="customer-card detail-priority-card">
+<header>
+<h2>고객 우선순위</h2>
+</header>{priorities.length?<ol>{priorities.map((item)=>
+<li key={item}>{item}</li>)}</ol>:<p className="detail-empty">등록된 우선순위가 없습니다.</p>}{important&&<div><span>중요하게 생각하는 부분</span><p>{important}</p></div>}{styles&&<div><span>원하는 분위기·스타일</span><p>{styles}</p></div>}{value(record.answers.inconvenience)&&<div>
+<span>가장 불편한 부분</span>
+<p>{value(record.answers.inconvenience)}</p>
+</div>}{value(record.answers.skipOk)&&<div>
+<span>하지 않아도 되는 공사</span>
+<p>{value(record.answers.skipOk)}</p>
+</div>}</section>
+</div>
+<div className="customer-detail-column customer-detail-center">
+<ConsultationNotes consultationId={record.id} initialNotes={notes}/>
+<section className="customer-card detail-timeline-card">
+<header>
+<h2>진행 히스토리</h2>
+</header>
+<ol>{events.map((event)=>
+<li key={event.id}>
+<time>{formatSeoulDateTime(event.createdAt)}</time>
+<div>
+<strong>{eventLabel[event.eventType]}</strong>{event.actorUserId&&<small>{memberNames.get(event.actorUserId)}</small>}{event.eventType.startsWith("QUOTE_")&&typeof event.payload.quote_amount==="number"&&<span>{formatManWon(event.payload.quote_amount)}</span>}{event.eventType==="CONTRACT_OUTCOME_CHANGED"&&<span>{event.payload.new_outcome==="CONTRACTED"?"계약 확정":event.payload.lost_reason&&typeof event.payload.lost_reason==="string"?`불성사 · ${lostReasonLabel[event.payload.lost_reason as keyof typeof lostReasonLabel]}`:"결과 변경"}</span>}</div>
+</li>)}{followup?.notes.map((note)=>
+<li key={`followup-${note.id}`}>
+<time>{formatSeoulDateTime(note.createdAt)}</time>
+<div>
+<strong>후속 연락</strong>
+<small>{note.authorName}</small>
+<span>{note.content}</span>
+</div>
+</li>)}</ol>
+</section>
+<DetailFollowupCard consultation={consultation} initialDate={followup?.nextContactAt??null} initialNotes={followup?.notes??[]}/>
+</div>
+<div className="customer-detail-column customer-detail-right">
+<section className="customer-card detail-images-card">
+<header>
+<h2>이미지</h2>
+<Link href={`/images?consultation=${record.id}`}>전체보기 →</Link>
+</header>{Object.entries(images).map(([category,count])=>
+<div key={category}>
+<span>{category==="FIELD_PHOTO"?"현장사진":category}</span>
+<strong>{count}장</strong>
+<small>{count?"":"사진 없음"}</small>
+</div>)}</section>
+<section className="customer-card detail-files-card">
+<header>
+<h2>파일</h2>
+<Link href={`/documents?consultation=${record.id}`}>전체 파일 보기 →</Link>
+</header>{docs.map((file)=>
+<a href={consultationFileOpenPath(record.id,file.id)} target="_blank" rel="noreferrer" key={file.id}>
+<b>{file.fileCategory==="CHECKLIST_ORIGINAL"?"체크리스트":file.id===record.quoteFileId?"견적서":"파일"}</b>
+<span>{file.originalFileName}</span>
+</a>)}{!docs.length&&<p className="detail-empty">등록된 파일이 없습니다.</p>}</section>
+<section className="customer-card detail-reservation-card">
+<header>
+<h2>상담 예약</h2>
+</header>{record.scheduledAt?<>
+<strong>{formatSeoulDateTime(record.scheduledAt)}</strong>{record.scheduledNote&&<p>{record.scheduledNote}</p>}{completed&&<span>상담 완료</span>}</>:<p className="detail-empty">예약된 상담이 없습니다.</p>}<div>
+<ReservationEditor consultation={consultation}/>
+<ProgressActions consultationId={record.id} status={consultation.status}/>
+</div>
+</section>
+<section className="customer-card detail-quote-card">
+<header>
+<h2>견적</h2>
+</header>{record.quoteAmount?<>
+<strong>{formatManWon(record.quoteAmount)}</strong>{quoteFile&&<a href={consultationFileOpenPath(record.id,quoteFile.id)} target="_blank" rel="noreferrer">{quoteFile.originalFileName}</a>}<span className={`quote-status-badge ${record.quoteStatus==="SENT"?"is-sent":"is-unsent"}`}>{record.quoteStatus==="SENT"?"✓ 발송완료":"미발송"}</span>{record.quoteSentAt&&<small>발송일 {seoulDateKey(record.quoteSentAt).replaceAll("-",".")}</small>}<p>{contractOutcomeLabel[record.contractOutcome]}{record.lostReason&&` · ${lostReasonLabel[record.lostReason]}`}</p>
+</>:<p className="detail-empty">등록된 견적이 없습니다.</p>}{(record.status==="COMPLETED"||record.status==="CONTRACTED")&&<QuoteEditor consultation={consultation}/>} {record.quoteStatus==="SENT"&&<Link className="card-text-action" href={`/quotes?consultation=${record.id}`}>계약결과 관리</Link>}</section>
+</div>
+</div>
+</main>
+</AppShell>}

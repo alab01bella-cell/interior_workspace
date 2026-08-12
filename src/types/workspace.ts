@@ -39,6 +39,7 @@ export interface User {
   customProfileWorkspaceId: string | null;
   jobTitle: string | null;
   onboardingCompleted: boolean;
+  profileCompleted: boolean;
   createdAt: string;
   updatedAt: string;
   lastLoginAt: string;
@@ -83,4 +84,6 @@ export interface WorkspaceIdentity {
   jobTitle: string | null;
   workspaceName: string;
   consultationChecklistUrl: string | null;
+  role: WorkspaceRole;
+  isSuperAdmin: boolean;
 }

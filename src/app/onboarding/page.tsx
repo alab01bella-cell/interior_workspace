@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { getServiceDisplayName } from "@/lib/auth/user-repository";
 import { findActiveWorkspaceContext } from "@/lib/workspaces/workspace-repository";
 import { submitOnboarding } from "./actions";
+import { canCreateWorkspace } from "@/lib/auth/workspace-creation-eligibility";
 
 const errors: Record<string, string> = {
   validation: "업체명과 서비스에서 사용할 이름을 확인해주세요.",
@@ -11,6 +12,7 @@ const errors: Record<string, string> = {
 
 export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await requireUser();
+  if(!(await canCreateWorkspace(user.email)).allowed)redirect("/access-denied");
   if (user.onboardingCompleted) {
     if (await findActiveWorkspaceContext(user.id)) redirect("/dashboard");
     notFound();

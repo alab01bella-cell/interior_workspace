@@ -5,6 +5,9 @@ import { formatGreetingSubject, getGreetingForSeoulTime } from "@/lib/presentati
 import { toWorkspaceIdentity } from "@/lib/workspaces/workspace-repository";
 import { listConsultations, toConsultation } from "@/lib/consultations/consultation-repository";
 import { listTodos } from "@/lib/dashboard/todo-repository";
+import { CurrentWeather } from "@/components/dashboard/current-weather";
+import { listTodayFollowups } from "@/lib/consultations/quote-followup-repository";
+import { seoulDateKey } from "@/lib/consultations/reservation-time";
 
 function getKoreanDate() {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -30,8 +33,9 @@ export default async function DashboardPage() {
           <h1>{greetingSubject}, {greeting}</h1>
           <p className="today">오늘은 {getKoreanDate()}</p>
         </div>
+        <CurrentWeather />
       </section>
-      <DashboardDataSection consultations={consultations} todos={await listTodos(context.workspace.id,context.user.id)} />
+      <DashboardDataSection consultations={consultations} todos={await listTodos(context.workspace.id,context.user.id)} todayFollowups={await listTodayFollowups(context.workspace.id,seoulDateKey(new Date()))}/>
     </AppShell>
   );
 }
