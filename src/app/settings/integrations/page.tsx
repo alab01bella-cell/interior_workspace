@@ -3,7 +3,9 @@ import { AppShell } from "@/components/layout/app-shell";
 import { DriveConnectButton } from "@/components/integrations/drive-connect-button";
 import { PublicConsultationLink } from "@/components/integrations/public-consultation-link";
 import { requireWorkspace } from "@/lib/auth/require-user";
-import { findPublicDriveConnection } from "@/lib/google/drive-connection-repository";
+import { findDriveConnection } from "@/lib/google/drive-connection-repository";
+import { getGoogleAccessToken } from "@/lib/google/google-access-token";
+import { driveErrorKind } from "@/lib/google/drive-error";
 import { ensureConsultationShortCode, toWorkspaceIdentity } from "@/lib/workspaces/workspace-repository";
 import { headers } from "next/headers";
 
@@ -21,10 +23,11 @@ function formatConnectedAt(value: string): string {
 
 export default async function IntegrationsPage({ searchParams }: PageProps) {
   const context = await requireWorkspace();
-  const connection = await findPublicDriveConnection(context.workspace.id);
+  const connection = await findDriveConnection(context.workspace.id);
   const params = await searchParams;
   const isOwner = context.membership.role === "OWNER";
-  const isConnected = connection?.connectionStatus === "CONNECTED";
+  let actualDriveState="DISCONNECTED";if(connection?.connectionStatus==="CONNECTED")try{await getGoogleAccessToken(connection);actualDriveState="CONNECTED";}catch(error){actualDriveState=driveErrorKind(error);}
+  const isConnected = actualDriveState === "CONNECTED";
   const consultationShortCode=context.workspace.consultationShortCode??(isOwner?await ensureConsultationShortCode(context.workspace.id):null);
   const requestHeaders=await headers(),host=requestHeaders.get("x-forwarded-host")??requestHeaders.get("host")??"",protocol=requestHeaders.get("x-forwarded-proto")??"https",origin=host?`${protocol}://${host}`:"";
 
@@ -40,7 +43,7 @@ export default async function IntegrationsPage({ searchParams }: PageProps) {
         {params.result === "connected" && <p className="integration-alert is-success">Google Drive 연결을 완료했습니다.</p>}
         {params.result === "disconnected" && <p className="integration-alert is-success">Google Drive 연결을 해제했습니다. 기존 폴더와 파일은 삭제하지 않았습니다.</p>}
         {params.warning === "revoke_failed" && <p className="integration-alert is-warning">Google의 토큰 해지 요청은 실패했지만, Workspace에서는 저장된 토큰을 폐기했습니다.</p>}
-        {params.error && <p className="integration-alert is-error">Google Drive 작업을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.</p>}
+        {(params.error === "reauth_required"||actualDriveState==="REAUTH_REQUIRED") ? <div className="integration-alert is-error">Google Drive 연결을 다시 확인해주세요. {isOwner&&<DriveConnectButton label="다시 연결" className="integration-button is-secondary"/>}</div> : (params.error === "config"||actualDriveState==="CONFIG_ERROR") ? <p className="integration-alert is-error">Google Drive 설정을 확인해주세요. 관리자에게 문의해주세요.</p> : (params.error === "permission"||actualDriveState==="PERMISSION_ERROR") ? <p className="integration-alert is-error">Google Drive 접근 권한을 확인해주세요.</p> : (params.error||actualDriveState==="TEMPORARY_ERROR") && <p className="integration-alert is-error">Google Drive 작업을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.</p>}
 
         <article className="integration-card">
           <div className="integration-icon"><HardDrive aria-hidden="true" /></div>
@@ -84,7 +87,7 @@ export default async function IntegrationsPage({ searchParams }: PageProps) {
               )}
               {isOwner ? isConnected ? (
                 <>
-                  <DriveConnectButton label="연결 계정 변경" className="integration-button is-secondary" />
+                  <DriveConnectButton label="Google Drive 다시 연결" className="integration-button is-secondary" />
                   <form action="/api/google/drive/disconnect" method="post">
                     <button className="integration-button is-danger" type="submit">연결 해제</button>
                   </form>

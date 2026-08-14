@@ -28,6 +28,8 @@ const errorMessages: Record<string, string> = {
   security: "보안 연결을 설정하지 못했습니다.",
   folder: "업체 전용 폴더를 만들지 못했습니다.",
   save: "연결 정보를 안전하게 저장하지 못했습니다.",
+  config: "Google Drive 설정을 확인해주세요. 관리자에게 문의해주세요.",
+  permission: "Google Drive 접근 권한을 확인해주세요.",
   owner_required: "Workspace OWNER만 Google Drive를 연결할 수 있습니다.",
   temporary_error: "일시적인 오류가 발생했습니다.",
   temporary: "일시적인 오류가 발생했습니다.",
@@ -45,9 +47,10 @@ export function DriveConnectionProgress({
   hasPendingProcess: boolean;
   recoverPending: boolean;
 }) {
-  const [view, setView] = useState<ViewState>(initialCompletion ? "complete" : initialError ? "error" : "processing");
-  const [completedSteps, setCompletedSteps] = useState<StepId[]>(initialCompletion ? steps.map(({ id }) => id) : []);
-  const [completion, setCompletion] = useState<Completion | null>(initialCompletion);
+  const existingCompletion = hasPendingProcess ? null : initialCompletion;
+  const [view, setView] = useState<ViewState>(existingCompletion ? "complete" : initialError ? "error" : "processing");
+  const [completedSteps, setCompletedSteps] = useState<StepId[]>(existingCompletion ? steps.map(({ id }) => id) : []);
+  const [completion, setCompletion] = useState<Completion | null>(existingCompletion);
   const [error, setError] = useState(initialError ?? "temporary");
   const [isSlow, setIsSlow] = useState(false);
   const started = useRef(false);

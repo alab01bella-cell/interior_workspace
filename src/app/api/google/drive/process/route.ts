@@ -11,6 +11,7 @@ import {
 } from "@/lib/google/drive-api";
 import { findDriveConnection, saveConnectedDrive } from "@/lib/google/drive-connection-repository";
 import { encryptRefreshToken } from "@/lib/google/token-encryption";
+import { DriveError } from "@/lib/google/drive-error";
 
 export const runtime = "nodejs";
 
@@ -32,9 +33,13 @@ interface TokenResponse {
 type ProcessEvent =
   | { type: "step"; step: "account" | "security" | "folder" | "save" }
   | { type: "complete"; email: string; workspaceName: string; folderId: string }
-  | { type: "error"; reason: "expired" | "account" | "security" | "folder" | "save" | "temporary" };
+  | { type: "error"; reason: "expired" | "account" | "security" | "folder" | "save" | "config" | "permission" | "temporary" };
 
 function publicReason(error: unknown): Extract<ProcessEvent, { type: "error" }>["reason"] {
+  if(error instanceof DriveError){
+    if(error.kind==="CONFIG_ERROR")return "config";
+    if(error.kind==="PERMISSION_ERROR")return "permission";
+  }
   const message = error instanceof Error ? error.message : "";
   if (["drive_account_unavailable", "token_exchange_failed", "invalid_token_response", "drive_scope_missing"].includes(message)) return "account";
   if (["drive_encryption_not_configured", "refresh_token_missing"].includes(message)) return "security";
@@ -76,29 +81,33 @@ export async function POST(request: NextRequest) {
           cache: "no-store",
           signal: AbortSignal.timeout(30_000),
         });
-        if (!tokenResponse.ok) throw new Error("token_exchange_failed");
+        if (!tokenResponse.ok) {
+          const failure=await tokenResponse.json().catch(()=>null) as {error?:unknown}|null;
+          const code=typeof failure?.error==="string"?failure.error:"unknown";
+          console.error("Google OAuth authorization code exchange failed",{status:tokenResponse.status,error:code});
+          if(code==="invalid_client"||code==="unauthorized_client")throw new DriveError("CONFIG_ERROR","google_client_configuration_invalid");
+          throw new Error("token_exchange_failed");
+        }
         const tokens = await tokenResponse.json() as TokenResponse;
         if (!tokens.access_token || !tokens.expires_in) throw new Error("invalid_token_response");
         accessToken = tokens.access_token;
         const grantedScopes = (tokens.scope ?? "").split(" ").filter(Boolean);
         if (!grantedScopes.includes(DRIVE_FILE_SCOPE)) throw new Error("drive_scope_missing");
 
+        // This is the lightweight Drive API verification. No stored credential is
+        // replaced until the new access token and the existing root folder both work.
         const [email, existing] = await Promise.all([
           getDriveAccountEmail(tokens.access_token),
           findDriveConnection(context.workspace.id),
         ]);
         send({ type: "step", step: "account" });
 
-        const encryptedToken = tokens.refresh_token
-          ? await encryptRefreshToken(tokens.refresh_token, context.workspace.id)
-          : existing?.encryptedRefreshToken && existing.tokenIv && existing.tokenAuthTag
-            ? { ciphertext: existing.encryptedRefreshToken, iv: existing.tokenIv, authTag: existing.tokenAuthTag }
-            : null;
-        if (!encryptedToken) throw new Error("refresh_token_missing");
+        if (!tokens.refresh_token) throw new Error("refresh_token_missing");
+        const encryptedToken = await encryptRefreshToken(tokens.refresh_token, context.workspace.id);
         send({ type: "step", step: "security" });
 
         let folderId = existing?.driveRootFolderId ?? null;
-        if (folderId && !await isUsableDriveFolder(tokens.access_token, folderId)) folderId = null;
+        if (folderId && !await isUsableDriveFolder(tokens.access_token, folderId)) throw new Error("drive_folder_check_failed");
         if (!folderId) {
           folderId = await createDriveRootFolder(tokens.access_token, context.workspace.name);
           createdFolderId = folderId;

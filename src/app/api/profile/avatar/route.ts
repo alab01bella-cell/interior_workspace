@@ -5,6 +5,7 @@ import { getWorkspaceContextForSession } from "@/lib/auth/require-user";
 import { findDriveConnection } from "@/lib/google/drive-connection-repository";
 import { getGoogleAccessToken } from "@/lib/google/google-access-token";
 import { deleteDriveFolder, downloadDriveFile, uploadDriveFile } from "@/lib/google/drive-api";
+import { driveErrorKind,driveErrorStatus } from "@/lib/google/drive-error";
 
 const allowedTypes=new Set(["image/jpeg","image/png","image/webp"]);
 const maxSize=5*1024*1024;
@@ -30,7 +31,7 @@ export async function POST(request:Request){
     if(previous&&context.user.customProfileWorkspaceId===context.workspace.id)try{await deleteDriveFolder(token,previous);}catch{/* 이전 사진 정리는 best effort */}
     const user=await findUserById(context.user.id);
     return NextResponse.json({ok:true,imageUrl:user?.profileImageUrl??"/api/profile/avatar"});
-  }catch{return NextResponse.json({error:"upload_failed"},{status:502});}
+  }catch(error){const kind=driveErrorKind(error);return NextResponse.json({error:kind.toLowerCase()},{status:driveErrorStatus(kind)});}
 }
 
 export async function DELETE(){
